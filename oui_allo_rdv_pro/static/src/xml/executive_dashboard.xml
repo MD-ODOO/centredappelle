@@ -1,5 +1,5 @@
-<templates>
-    <t t-name="ExecutiveDashboard">
+<templates xml:space="preserve">
+    <t t-name="ExecutiveDashboard" owl="1">
         <div class="exec-dashboard">
             <div class="period-filter">
                 <button t-on-click="() => changePeriod('week')">Semaine</button>
