@@ -1,0 +1,121 @@
+<templates>
+    <t t-name="ExecutiveDashboard">
+        <div class="exec-dashboard">
+            <div class="period-filter">
+                <button t-on-click="() => changePeriod('week')">Semaine</button>
+                <button t-on-click="() => changePeriod('month')">Mois</button>
+                <button t-on-click="() => changePeriod('quarter')">Trimestre</button>
+                <button t-on-click="() => changePeriod('year')">Année</button>
+            </div>
+
+            <!-- GLOBAL KPI -->
+            <div class="kpi-row">
+                <div class="kpi-card blue">
+                    <h2 t-esc="state.data.global.total ?? 0"/>
+                    <span>Total RDV</span>
+                </div>
+                <div class="kpi-card green">
+                    <h2 t-esc="state.data.global.exploite ?? 0"/>
+                    <span>Exploités</span>
+                </div>
+                <div class="kpi-card red">
+                    <h2 t-esc="state.data.global.absent ?? 0"/>
+                    <span>No-Show</span>
+                </div>
+                <div class="kpi-card purple">
+                    <h2 t-esc="(state.data.global.taux_exploitation ?? 0).toFixed(1)"/>%
+                    <span>Taux Exploitation</span>
+                </div>
+            </div>
+
+            <!-- CONSEILLERS -->
+            <div class="section">
+                <h3>Performance Conseillers</h3>
+                <table class="exec-table">
+                    <tr>
+                        <th>Conseiller</th>
+                        <th>Pris</th>
+                        <th>Exploités</th>
+                        <th>Absents</th>
+                        <th>Taux</th>
+                        <th>Objectif</th>
+                    </tr>
+                    <t t-foreach="state.data.conseillers" t-as="c" t-key="c.id">
+                        <tr t-on-click="() => openConseiller(c.id)">
+                            <td><t t-esc="c.name"/></td>
+                            <td><t t-esc="c.pris ?? 0"/></td>
+                            <td><t t-esc="c.exploite ?? 0"/></td>
+                            <td><t t-esc="c.absent ?? 0"/></td>
+                            <td>
+                                <span t-att-class="c.taux_exploitation > 80 ? 'badge-green' : 'badge-red'">
+                                    <t t-esc="(c.taux_exploitation ?? 0).toFixed(1)"/>%
+                                </span>
+                            </td>
+                            <td>
+                                <span t-att-class="c.objectif_atteint ? 'badge-green' : 'badge-red'">
+                                    <t t-esc="c.objectif ?? 0"/>
+                                </span>
+                            </td>
+                        </tr>
+                    </t>
+                </table>
+            </div>
+
+            <!-- CAMPAGNES -->
+            <div class="section">
+                <h3>Performance Campagnes</h3>
+                <table class="exec-table">
+                    <tr>
+                        <th>Campagne</th>
+                        <th>RDV Commandés</th>
+                        <th>Pris</th>
+                        <th>Exploités</th>
+                        <th>Absents</th>
+                        <th>Reportés</th>
+                        <th>Restants</th>
+                        <th>Taux</th>
+                        <th t-if="state.data.is_admin">Prix</th>
+                    </tr>
+
+                    <t t-foreach="state.data.campagnes" t-as="camp" t-key="camp.id">
+                        <tr t-on-click="() => openCampaign(camp.id)">
+                            <td><strong t-esc="camp.name"/></td>
+                            <td><t t-esc="camp.commande ?? 0"/></td>
+                            <td><t t-esc="camp.pris ?? 0"/></td>
+                            <td><span class="badge-green"><t t-esc="camp.exploite ?? 0"/></span></td>
+                            <td><span class="badge-red"><t t-esc="camp.absent ?? 0"/></span></td>
+                            <td><span class="badge-orange"><t t-esc="camp.reporte ?? 0"/></span></td>
+                            <td><span t-att-class="camp.restant > 0 ? 'badge-orange' : 'badge-green'"><t t-esc="camp.restant ?? 0"/></span></td>
+                            <td><span t-att-class="camp.taux_exploitation > 80 ? 'badge-green' : 'badge-red'"><t t-esc="(camp.taux_exploitation ?? 0).toFixed(1)"/>%</span></td>
+                            <td t-if="state.data.is_admin"><t t-esc="camp.price_paid ?? 0"/> €</td>
+                        </tr>
+
+                        <!-- Conseillers imbriqués -->
+                        <t t-if="camp.conseillers?.length">
+                            <tr class="sub-row">
+                                <td colspan="9">
+                                    <table class="sub-table">
+                                        <tr>
+                                            <th>Conseiller</th>
+                                            <th>Pris</th>
+                                            <th>Exploités</th>
+                                            <th>Taux</th>
+                                        </tr>
+                                        <t t-foreach="camp.conseillers" t-as="cs" t-key="cs.id">
+                                            <tr>
+                                                <td><t t-esc="cs.name"/></td>
+                                                <td><t t-esc="cs.pris ?? 0"/></td>
+                                                <td><t t-esc="cs.exploite ?? 0"/></td>
+                                                <td><span t-att-class="cs.taux > 80 ? 'badge-green' : 'badge-red'"><t t-esc="(cs.taux ?? 0).toFixed(1)"/>%</span></td>
+                                            </tr>
+                                        </t>
+                                    </table>
+                                </td>
+                            </tr>
+                        </t>
+                    </t>
+                </table>
+            </div>
+        </div>
+    </t>
+</templates>

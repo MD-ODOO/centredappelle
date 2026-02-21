@@ -1,0 +1,308 @@
+<odoo>
+
+
+     <record id="view_campagne_search_pipeline"
+        model="ir.ui.view">
+    <field name="name">campagne.view.search</field>
+    <field name="model">oui.campaign</field>
+    <field name="arch" type="xml">
+        <search>
+            
+             <field name="name"/>
+            <field name="client_id"/>
+            <field name="campaign_manager_id"/>
+            <field name="activity_id"/>
+
+            
+             <filter name="my_rdv"
+                    string="Mes Campagnes"
+                    domain="[('campaign_manager_id','=',uid)]"/>
+
+          
+             <filter string="Actives"
+                    name="active"
+                    domain="[('state','=','open')]"/>
+
+            <filter string="Expirent bientôt"
+                    name="expiring"
+                    domain="[('state','=','expiring')]"/>
+
+            <filter string="Fermées"
+                    name="closed"
+                    domain="[('state','=','closed')]"/>
+            
+             <!-- <group expand="0" string="Regrouper par">
+                <filter string="Responsable"
+                        context="{'group_by':'campaign_manager_id'}"/>
+                <filter string="Client"
+                        context="{'group_by':'client_id'}"/>
+                <filter string="État"
+                        context="{'group_by':'state'}"/>
+            </group> -->
+
+        </search>
+    </field>
+</record>
+
+  
+
+ 
+    
+  
+
+    <record id="view_campaign_tree" model="ir.ui.view">
+        <field name="name">campaign.tree</field>
+        <field name="model">oui.campaign</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="client_id"/>
+                <field name="campaign_manager_id"/>
+                <field name="conseiller_ids" widget="many2many_tags"/>
+                <field name="event_count"/>
+                <field name="completion_rate" widget="progressbar"/>
+                <field name="rdv_realised"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+   <record id="view_campaign_form" model="ir.ui.view">
+    <field name="name">oui.campaign.form</field>
+    <field name="model">oui.campaign</field>
+    <field name="arch" type="xml">
+        <form string="Campagne">
+
+            <header>
+                <field name="state"
+       widget="statusbar"
+       statusbar_visible="draft,open,expiring,closed"/>
+
+                <button name="action_close"
+                        string="Fermer"
+                        type="object"
+                        class="btn-danger"
+                        invisible="state == 'closed'"/>
+
+                <button name="action_reopen"
+                        string="Réouvrir"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state == 'open'"/>
+                 <button name="action_create_meeting"
+                        type="object"
+                        string="Créer RDV"
+                        class="btn-primary"
+                        invisible="state == 'closed'"/>
+                <button type="object"
+                        name="action_view_realised"
+                        class="btn-success"
+                        string="Réalisés"
+                        >
+                       </button>
+                        <button type="object"
+                        name="action_view_agenda"
+                        class="oe_stat_button"
+                        string="AGENDA"
+                        >
+                       </button>
+            </header>
+
+            <sheet>
+
+                <div class="oe_button_box" name="button_box">
+
+                    <button type="object"
+                            name="action_view_campagne_evens"
+                            class="oe_stat_button"
+                            icon="fa-calendar">
+                        <field name="event_count"
+                               widget="statinfo"/>
+                    </button>
+
+                    <button type="object"
+                            class="oe_stat_button"
+                            icon="fa-database">
+                        <field name="total_volume" widget="statinfo"/>
+                    </button>
+
+                    <button type="object"
+                            class="oe_stat_button"
+                            icon="fa-check">
+                        <field name="rdv_realised" widget="statinfo"/>
+                    </button>
+
+                    <button type="object"
+                            class="oe_stat_button"
+                            icon="fa-hourglass-half">
+                        <field name="rdv_remaining" widget="statinfo"/>
+                    </button>
+
+                    <button name="action_view_invoice"
+                            type="object"
+                            string="Facture"
+                            class="oe_stat_button"
+                            icon="fa-file-invoice"
+                            groups="oui_allo_rdv_pro.group_call_admin">
+                        <field name="invoice_count" widget="statinfo"/>
+                    </button>
+                                        
+
+                </div>
+               
+                <group>
+               
+               
+                <group >
+
+                    <field name="completion_rate"
+                        widget="progressbar"
+                        readonly="1"/>
+
+                </group>
+                <group >
+
+                    <field name="rdv_month_count"
+                        widget="progressbar"
+                        readonly="1"/>
+
+                </group>
+                 <button name="action_open_generate_rdv_wizard"
+                    type="object"
+                    string="Générer les RDV"
+                    class="btn-primary"
+                    invisible="state == 'closed'"/>
+                </group>
+                                
+
+                <div class="oe_title">
+                    <h1>
+                        <field name="name" readonly="1"/>
+                    </h1>
+                </div>
+                
+                <group>
+                <group>
+                    <field name="client_id"/>
+                    <field name="campaign_manager_id"/>
+                </group>
+                <group>
+                    <field name="activity_id"/>
+                </group>
+                </group>
+            
+                <group string="Informations générales">
+
+    <group>
+        <field name="conseiller_ids" widget="many2many_tags"/>
+    </group>
+
+    <group>
+        <field name="date_start"/>
+        <field name="date_end"/>
+        <field name="monthly_rdv_volume"/>
+        <field name="rdv_carry_over"/>
+        <field name="agenda_id"/>
+    </group>
+
+</group>
+<group>
+<group string="Informations financières"  groups="oui_allo_rdv_pro.group_call_admin">
+    <field name="price"/>
+<field name="contract_attachment_ids" widget="many2many_binary"/>
+</group>
+<group>
+        <field name="duration_months"/>
+        
+</group>
+</group>
+
+
+                <notebook>
+                    <page string="Rendez-vous">
+                        <field name="attendee_ids" readonly="1">
+                            <list>
+                                <field name="partner_id"/>
+                                <field name="stage_id"/>
+                                <field name="conseiller_id"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+
+            </sheet>
+        </form>
+    </field>
+</record>
+
+
+
+<record id="view_calendar_event_graph_month" model="ir.ui.view">
+    <field name="name">calendar.event.graph.month</field>
+    <field name="model">calendar.event</field>
+    <field name="arch" type="xml">
+        <graph string="RDV par Mois" type="line">
+
+            <field name="start" interval="month" type="row"/>
+            <field name="id" type="measure"/>
+
+        </graph>
+    </field>
+</record>
+<record id="view_calendar_event_graph_conseiller" model="ir.ui.view">
+    <field name="name">calendar.event.graph.conseiller</field>
+    <field name="model">calendar.event</field>
+    <field name="arch" type="xml">
+        <graph string="Performance Conseillers" type="bar">
+
+            <field name="conseiller_id" type="row"/>
+            <field name="id" type="measure"/>
+
+        </graph>
+    </field>
+</record>
+<record id="view_calendar_event_pivot_kpi" model="ir.ui.view">
+    <field name="name">calendar.event.pivot.kpi</field>
+    <field name="model">calendar.event</field>
+    <field name="arch" type="xml">
+        <pivot string="Analyse RDV">
+
+            <field name="name" type="row"/>
+            <field name="conseiller_id" type="col"/>
+            <field name="id" type="measure"/>
+
+        </pivot>
+    </field>
+</record>
+
+<record id="action_dashboard_kpi" model="ir.actions.act_window">
+    <field name="name">Dashboard KPI</field>
+    <field name="res_model">calendar.event</field>
+    <field name="view_mode">graph,pivot</field>
+</record>
+
+
+
+
+    <record id="action_campaign" model="ir.actions.act_window">
+        <field name="name">Campagnes</field>
+        <field name="res_model">oui.campaign</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_my_rdv': 1}</field>
+    </record>
+
+    
+
+   
+
+
+
+
+    <record id="seq_campaign" model="ir.sequence">
+    <field name="name">Campaign Sequence</field>
+    <field name="code">oui.campaign</field>
+    <field name="padding">3</field>
+   </record>
+
+   
+</odoo>

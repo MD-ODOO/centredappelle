@@ -1,0 +1,244 @@
+
+<odoo>
+  <record id="view_calendar_event_search_inherit"
+        model="ir.ui.view">
+    <field name="name">calendar.event.search.inherit</field>
+    <field name="model">calendar.event</field>
+    <field name="inherit_id" ref="calendar.view_calendar_event_search"/>
+    <field name="arch" type="xml">
+
+        <xpath expr="//search" position="inside">
+
+            <filter name="my_campaigns"
+                    string="Mes Campagnes"
+                    domain="[('campaign_manager_id','=',uid)]"/>
+
+            <filter name="my_rdv"
+                    string="Mes RDV"
+                    domain="[('conseiller_id','in',uid)]"/>
+
+            <filter name="done"
+                    string="Réalisés"
+                    domain="[('stage_id.is_done','=',True)]"/>
+            
+
+
+            <filter name="overdue"
+                    string="En retard"
+                    domain="[('is_overdue','=',True)]"/>
+
+            <!-- <group expand="0" string="Group By">
+                <filter string="Campagne"
+                        context="{'group_by':'campaign_id'}"/>
+
+                <filter string="Conseiller"
+                        context="{'group_by':'conseiller_id'}"/>
+
+                <filter string="Étape"
+                        context="{'group_by':'stage_id'}"/>
+            </group> -->
+
+        </xpath>
+
+    </field>
+</record>
+
+
+<record id="view_calendar_event_form_inherit_campaign"
+        model="ir.ui.view">
+
+    <field name="name">
+        calendar.event.form.inherit.campaign
+    </field>
+
+    <field name="model">calendar.event</field>
+
+    <field name="inherit_id"
+           ref="calendar.view_calendar_event_form"/>
+
+    <field name="arch" type="xml">
+     <xpath expr="//header" position="inside">
+            <field name="stage_id"
+                widget="statusbar"
+                options="{'clickable': true}"
+                statusbar_visible="1"/>
+        </xpath>
+
+        <!-- On ajoute les champs dans le premier group -->
+        <xpath expr="//sheet//group[1]" position="inside">
+
+            <field name="campaign_id"/>
+
+            <field name="conseiller_id"/>
+
+        </xpath>
+        <xpath expr="//field[@name='partner_ids']" position="attributes">
+            <attribute name="string">Participants (Clients)</attribute>
+            <attribute name="domain">[('is_company','=',False)]</attribute>
+        </xpath>
+
+    </field>
+</record>
+
+<record id="view_calendar_event_kanban_pipeline"
+        model="ir.ui.view">
+
+    <field name="name">calendar.event.pipeline.kanban</field>
+    <field name="model">calendar.event</field>
+     <field name="priority">10</field>
+
+    <field name="arch" type="xml">
+       <kanban default_group_by="stage_id"
+        quick_create="true"
+        class="o_kanban_small_column"
+        default_order="start asc"
+        color="color">
+
+    <!-- Champs obligatoires -->
+    <field name="name"/>
+    <field name="campaign_id"/>
+    <field name="conseiller_id"/>
+    <field name="campaign_manager_id"/>
+    <field name="start"/>
+    <field name="priority_level"/>
+    <field name="is_overdue"/>
+    <field name="stage_id"/>
+    <field name="delay_days"/>
+
+    <templates>
+        <t t-name="card">
+            <div class="o_kanban_record p-2">
+
+                <!-- 🔴 BADGES PRIORITÉ / RETARD -->
+                <div class="d-flex justify-content-between mb-1">
+
+                    <div t-if="record.priority_level and record.priority_level.raw_value == 'high'"
+                         class="badge bg-danger">
+                        🔥 Urgent
+                    </div>
+
+                    <div t-if="record.is_overdue and record.is_overdue.raw_value"
+                         class="badge bg-dark">
+                        ⏰ En retard
+                    </div>
+                    <div t-if="record.delay_days and record.delay_days.raw_value > 0"
+                            class="text-danger small">
+                            +<t t-esc="record.delay_days.raw_value"/> jours de retard
+                        </div>
+
+                </div>
+
+                <!-- 📝 TITRE -->
+                <div class="fw-bold fs-6 text-truncate mb-1">
+                    <field name="name"/>
+                </div>
+
+                <!-- 📢 CAMPAGNE -->
+                <div class="text-primary small mb-1">
+                    <i class="fa fa-bullhorn me-1"/>
+                    <field name="campaign_id" string="Campagne"/>
+                </div>
+                 <!-- 👤 CONSEILLER -->
+                <div class="text-info small mb-1">
+                    <i class="fa fa-user me-1"/>
+                    <field name="campaign_manager_id" string="Manager"/>
+                </div>
+
+                <!-- 👤 CONSEILLER -->
+                <div class="text-info small mb-1">
+                    <i class="fa fa-user me-1"/>
+                    <field name="conseiller_id" string="Conseillers"/>
+                </div>
+
+                <!-- 📅 DATE -->
+                <div class="text-muted small">
+                    <i class="fa fa-calendar me-1"/>
+                    <field name="start"/>
+                </div>
+
+            </div>
+        </t>
+    </templates>
+
+</kanban>
+
+    </field>
+</record>
+
+<odoo>
+    <!-- RDV par mois / semaine / trimestre / année -->
+    <record id="view_dashboard_graph_rdv_time" model="ir.ui.view">
+        <field name="name">calendar.event.graph.time</field>
+        <field name="model">calendar.event</field>
+        <field name="arch" type="xml">
+            <graph string="RDV par période" type="bar">
+                <field name="start" interval="month" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Performance Conseillers -->
+    <record id="view_dashboard_graph_conseiller" model="ir.ui.view">
+        <field name="name">calendar.event.graph.conseiller</field>
+        <field name="model">calendar.event</field>
+        <field name="arch" type="xml">
+            <graph string="Performance Conseillers" type="bar">
+                <field name="conseiller_id" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Graphiques combinés KPI + barres -->
+    <record id="view_dashboard_graph_combined" model="ir.ui.view">
+        <field name="name">dashboard.graph.combined</field>
+        <field name="model">calendar.event</field>
+        <field name="arch" type="xml">
+            <graph string="KPI ET Tendances" type="bar">
+                <field name="start" interval="month" type="col"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+</odoo>
+
+<!-- Graph RDV par période -->
+<record id="action_graph_rdv_time" model="ir.actions.act_window">
+    <field name="name">RDV par période</field>
+    <field name="res_model">calendar.event</field>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="view_dashboard_graph_rdv_time"/>
+</record>
+
+<!-- Graph Performance Conseillers -->
+<record id="action_graph_conseiller" model="ir.actions.act_window">
+    <field name="name">Performance Conseillers</field>
+    <field name="res_model">calendar.event</field>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="view_dashboard_graph_conseiller"/>
+</record>
+
+<!-- Graph Combiné KPI + Tendances -->
+<record id="action_graph_combined" model="ir.actions.act_window">
+    <field name="name">Tendances ET KPI</field>
+    <field name="res_model">calendar.event</field>
+    <field name="view_mode">graph</field>
+    <field name="view_id" ref="view_dashboard_graph_combined"/>
+</record>
+
+
+
+
+ <record id="action_evens_all"
+        model="ir.actions.act_window">
+    <field name="name">Pipeline RDV</field>
+    <field name="res_model">calendar.event</field>
+    <field name="view_mode">kanban,list,form,calendar</field>
+    <field name="context">{'search_default_my_rdv': 1}</field>
+
+</record>
+   
+
+
+</odoo>
