@@ -127,6 +127,12 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
+.exec-dashboard table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
     .kpi-row {

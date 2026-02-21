@@ -65,11 +65,13 @@ class CalendarEvent(models.Model):
     compute="_compute_delay_days",
     store=False)
 
+    @api.depends('start')
     def _compute_delay_days(self):
         now = fields.Datetime.now()
         for rec in self:
             if rec.start:
-                rec.delay_days = (now - rec.start).days
+                delta = now - rec.start
+                rec.delay_days = int(delta.total_seconds() // 86400)
             else:
                 rec.delay_days = 0
     

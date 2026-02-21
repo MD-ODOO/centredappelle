@@ -1,11 +1,7 @@
 
 <odoo>
 
-    <record id="action_executive_dashboard_client"
-        model="ir.actions.client">
-    <field name="name">Executive Dashboard</field>
-    <field name="tag">executive_dashboard</field>
-</record>
+   
  <!-- groups="oui_allo_rdv_pro.group_call_admin,
                   oui_allo_rdv_pro.group_call_manager,
                   oui_allo_rdv_pro.group_call_user" -->
@@ -23,11 +19,11 @@
               sequence="20"
               action="action_evens_all"/>
     
-    <menuitem id="menu_executive_dashboard"
+    <menuitem id="menu_dashboard"
           name="Dashboard Exécutif"
           parent="menu_root_rdv"
           sequence="30"
-          action="action_executive_dashboard_client"/>
+          action="action_executive_dashboard"/>
     
    
     <menuitem id="stage_menu"
