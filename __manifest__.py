@@ -10,6 +10,7 @@
          'security/ir.model.access.csv',
         'views/campaign_views.xml',
         'views/rdv_views.xml',
+        'views/executive_dashboard_action.xml',
         'views/conseiller_views.xml',
         'wizard/compagne_wizard_view.xml',
         'views/stage.xml',

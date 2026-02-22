@@ -69,7 +69,7 @@
 
             <field name="campaign_id"/>
 
-            <field name="conseiller_id"/>
+            <field name="conseiller_id" widget="many2many_tags"/>
 
         </xpath>
         <xpath expr="//field[@name='partner_ids']" position="attributes">
