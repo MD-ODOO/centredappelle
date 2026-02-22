@@ -70,9 +70,13 @@ class CampaignGenerateRdvLine(models.TransientModel):
     wizard_id = fields.Many2one('campaign.generate.rdv.wizard')
     start_datetime = fields.Datetime("Début RDV", required=True)
     conseiller_ids = fields.Many2many(
+    'res.users',
+    string="Conseillers",
+)
+    available_conseiller_ids = fields.Many2many(
         'res.users',
-        string="Conseillers",
-        domain="[('id', 'in', wizard_id.available_conseiller_ids)]",
+        related='wizard_id.conseiller_ids',
+        string="Conseillers disponibles",
     )
     duration = fields.Float("Durée (heures)", default=1.0)
 

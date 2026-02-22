@@ -16,7 +16,8 @@
                 <field name="rdv_line_ids">
                     <list editable="bottom">
                         <field name="start_datetime"/>
-                        <field name="conseiller_ids" widget="many2many_tags" domain="[('id', 'in', wizard_id.available_conseiller_ids.ids)]"  />
+                        <field name="available_conseiller_ids" invisible="1"/>
+                        <field name="conseiller_ids" widget="many2many_tags" domain="[('id', 'in', available_conseiller_ids.ids)]"  />
                         <field name="duration"/>
                     </list>
                 </field>
