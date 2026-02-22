@@ -70,14 +70,17 @@ class CampaignGenerateRdvLine(models.TransientModel):
     conseiller_ids = fields.Many2many(
     'res.users',
     string="Conseillers",
-    
 )
+    available_conseiller_ids = fields.Many2many(
+        'res.users',
+        related='wizard_id.conseiller_ids',
+        string="Conseillers disponibles",
+    )
     duration = fields.Float("Durée (heures)", default=1.0)
 
     @api.onchange('wizard_id')
     def _onchange_wizard_id(self):
         if self.wizard_id and self.wizard_id.conseiller_ids:
             self.conseiller_ids = self.wizard_id.conseiller_ids
-
 
 
