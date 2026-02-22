@@ -9,14 +9,14 @@
                 <field name="campaign_id" readonly="1"/>
                 <field name="partner_id" readonly="1"/>
                 <field name="responsable_id" readonly="1" />
-                <field name="conseiller_ids" widget="many2many_tags" readonly="1"/>
+                <field name="conseiller_ids" widget="many2many_tags" domain="[('id','in',available_conseiller_ids)]" readonly="1"/>
             </group>
 
             <group string="Dates des RDV">
                 <field name="rdv_line_ids">
                     <list editable="bottom">
                         <field name="start_datetime"/>
-                        <field name="conseiller_ids" widget="many2many_tags" domain="[('id','in',wizard_id.conseiller_ids)]"  />
+                        <field name="conseiller_ids" widget="many2many_tags" domain="[('id', 'in', wizard_id.available_conseiller_ids.ids)]"  />
                         <field name="duration"/>
                     </list>
                 </field>
