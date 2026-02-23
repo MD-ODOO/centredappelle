@@ -1,15 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <templates>
     <t t-name="ExecutiveDashboard">
         <div class="exec-dashboard">
 
-            <!-- ==== Filtre Période ==== -->
-            <div class="period-filter">
-                <button t-on-click="() => changePeriod('week')">Semaine</button>
-                <button t-on-click="() => changePeriod('month')">Mois</button>
-                <button t-on-click="() => changePeriod('quarter')">Trimestre</button>
-                <button t-on-click="() => changePeriod('year')">Année</button>
-            </div>
+            <!-- ==== Période ==== -->
+            <select t-on-change="changePeriod">
+                <option t-att-selected="state.period==='week'" value="week">Semaine</option>
+                <option t-att-selected="state.period==='month'" value="month">Mois</option>
+                <option t-att-selected="state.period==='quarter'" value="quarter">Trimestre</option>
+                <option t-att-selected="state.period==='year'" value="year">Année</option>
+            </select>
 
             <!-- ==== KPI Global ==== -->
             <div class="kpi-row">
@@ -30,119 +29,178 @@
                     <span>Taux Exploitation</span>
                 </div>
             </div>
+<!-- ===== Top 5 Campagnes et Conseillers ===== -->
+ <div class="top-row">
 
-            <!-- ==== Conseillers ==== -->
-            <div class="section">
-                <h3>Performance Conseillers</h3>
-                <table class="exec-table">
-                    <thead>
-                        <tr>
-                            <th>Conseiller</th>
-                            <th>Pris</th>
-                            <th>Exploités</th>
-                            <th>Absents</th>
-                            <th>Taux</th>
-                            <th>Objectif</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <t t-foreach="state.data.conseillers" t-as="c" t-key="c.id">
-                            <tr t-on-click="() => openConseiller(c.id)">
-                                <td><t t-esc="c.name"/></td>
-                                <td><t t-esc="c.pris ?? 0"/></td>
-                                <td><t t-esc="c.exploite ?? 0"/></td>
-                                <td><t t-esc="c.absent ?? 0"/></td>
-                                <td>
-                                    <span t-att-class="c.taux_exploitation > 80 ? 'badge-green' : 'badge-red'">
-                                        <t t-esc="(c.taux_exploitation ?? 0).toFixed(1)"/>%
-                                    </span>
-                                </td>
-                                <td>
-                                    <span t-att-class="c.objectif_atteint ? 'badge-green' : 'badge-red'">
-                                        <t t-esc="c.objectif ?? 0"/>
-                                    </span>
-                                </td>
-                            </tr>
-                        </t>
-                    </tbody>
-                </table>
+                <!-- Top 5 Campagnes -->
+               <div class="top_card">
+    <h3>🏆 Top 5 Campagnes</h3>
+    <t t-if="state.data.top_campaigns and state.data.top_campaigns.length">
+        <t t-set="i" t-value="0"/>
+        <t t-foreach="state.data.top_campaigns" t-as="camp" t-key="camp.id">
+            <t t-set="i" t-value="i + 1"/>
+            <div class="top_item" t-on-click="() => openCampaign(camp.id)">
+                <div class="top_rank">
+                    <t t-esc="i"/>
+                </div>
+                <div class="top_content">
+                    <strong><t t-esc="camp.name"/></strong>
+                    <span>
+                        Exploités : <t t-esc="camp.exploite or 0"/>
+                        ( <t t-esc="camp.taux_exploitation and camp.taux_exploitation.toFixed(1) or 0"/>% )
+                    </span>
+                </div>
+            </div>
+        </t>
+    </t>
+    <t t-else="">
+        <p>Aucune campagne</p>
+    </t>
+</div>
+
+                <!-- Top 5 Conseillers -->
+               <div class="top_card">
+    <h3>⭐ Top 5 Conseillers</h3>
+    <t t-if="state.data.top_conseillers and state.data.top_conseillers.length">
+        <t t-set="i" t-value="0"/>
+        <t t-foreach="state.data.top_conseillers" t-as="cons" t-key="cons.id">
+            <t t-set="i" t-value="i + 1"/>
+            <div class="top_item" t-on-click="() => openConseiller(cons.id)">
+                <div class="top_rank">
+                    <t t-esc="i"/>
+                </div>
+                <div class="top_content">
+                    <strong t-esc="cons.name"/>
+                    <span>
+                        Exploités : <t t-esc="cons.exploite or 0"/>
+                        (<t t-esc="cons.taux_exploitation and cons.taux_exploitation.toFixed(1) or 0"/>%)
+                    </span>
+                </div>
+                <div class="performance_badge" t-att-class="getPerformanceClass(cons.taux_exploitation)">
+                    <t t-esc="cons.taux_exploitation and cons.taux_exploitation.toFixed(0) or 0"/>%
+                </div>
+            </div>
+        </t>
+    </t>
+    <t t-else="">
+        <p>Aucun conseiller</p>
+    </t>
+</div>
+
+                <!-- Performance Conseillers -->
+              
+
             </div>
 
-            <!-- ==== Campagnes ==== -->
-            <div class="section">
-                <h3>Performance Campagnes</h3>
-                <table class="exec-table">
-                    <thead>
-                        <tr>
-                            <th>Campagne</th>
-                            <th>RDV Commandés</th>
-                            <th>Pris</th>
-                            <th>Exploités</th>
-                            <th>Absents</th>
-                            <th>Reportés</th>
-                            <th>Restants</th>
-                            <th>Taux</th>
-                            <th t-if="state.data.is_admin">Prix</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <t t-foreach="state.data.campagnes" t-as="camp" t-key="camp.id">
-                            <tr t-on-click="() => openCampaign(camp.id)">
-                                <td><strong t-esc="camp.name"/></td>
-                                <td><t t-esc="camp.commande ?? 0"/></td>
-                                <td><t t-esc="camp.pris ?? 0"/></td>
-                                <td><span class="badge-green"><t t-esc="camp.exploite ?? 0"/></span></td>
-                                <td><span class="badge-red"><t t-esc="camp.absent ?? 0"/></span></td>
-                                <td><span class="badge-orange"><t t-esc="camp.reporte ?? 0"/></span></td>
-                                <td>
-                                    <span t-att-class="camp.restant > 0 ? 'badge-orange' : 'badge-green'">
-                                        <t t-esc="camp.restant ?? 0"/>
-                                    </span>
-                                </td>
-                                <td>
-                                    <span t-att-class="camp.taux_exploitation > 80 ? 'badge-green' : 'badge-red'">
-                                        <t t-esc="(camp.taux_exploitation ?? 0).toFixed(1)"/>%
-                                    </span>
-                                </td>
-                                <td t-if="state.data.is_admin"><t t-esc="camp.price_paid ?? 0"/> €</td>
-                            </tr>
+            <div class="chart_grid">
 
-                            <!-- Conseillers imbriqués dans chaque campagne -->
-                            <t t-if="camp.conseillers?.length">
-                                <tr class="sub-row">
-                                    <td colspan="9">
-                                        <table class="sub-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Conseiller</th>
-                                                    <th>Pris</th>
-                                                    <th>Exploités</th>
-                                                    <th>Taux</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <t t-foreach="camp.conseillers" t-as="cs" t-key="cs.id">
-                                                    <tr>
-                                                        <td><t t-esc="cs.name"/></td>
-                                                        <td><t t-esc="cs.pris ?? 0"/></td>
-                                                        <td><t t-esc="cs.exploite ?? 0"/></td>
-                                                        <td>
-                                                            <span t-att-class="cs.taux > 80 ? 'badge-green' : 'badge-red'">
-                                                                <t t-esc="(cs.taux ?? 0).toFixed(1)"/>%
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                </t>
-                                            </tbody>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </t>
+                <div class="chart_card">
+                    <h3>Pie Campagnes</h3>
+                    <canvas id="pieCampaigns"></canvas>
+                </div>
 
-                        </t>
-                    </tbody>
-                </table>
+                <div class="chart_card">
+                    <h3>Pie Conseillers</h3>
+                    <canvas id="pieConseillers"></canvas>
+                </div>
+
+                <div class="chart_card">
+                    <h3>Performance Conseillers</h3>
+                    <canvas id="barPerformance"></canvas>
+                </div>
+
+                <div class="chart_card">
+                    <h3>Evolution Mensuelle RDV</h3>
+                    <canvas id="monthlyEvolution"></canvas>
+                </div>
+
             </div>
+
+           <!-- ==== Performance Conseillers + Campagnes sur la même ligne ==== -->
+<div class="section flex-row">
+    <!-- Performance Conseillers -->
+    <div class="table-card">
+        <h3>Performance Conseillers</h3>
+        <div class="table-scroll">
+            <table class="exec-table">
+                <thead>
+                    <tr>
+                        <th>Conseiller</th>
+                        <th>Pris</th>
+                        <th>Exploités</th>
+                        <th>Absents</th>
+                        <th>Taux</th>
+                        <th>Objectif</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="state.data.conseillers" t-as="c" t-key="c.id">
+                        <tr t-on-click="() => openConseiller(c.id)">
+                            <td><t t-esc="c.name"/></td>
+                            <td><t t-esc="c.pris ?? 0"/></td>
+                            <td><t t-esc="c.exploite ?? 0"/></td>
+                            <td><t t-esc="c.absent ?? 0"/></td>
+                            <td><span t-att-class="getPerformanceClass(c.taux_exploitation)">
+                                <t t-esc="(c.taux_exploitation ?? 0).toFixed(1)"/>%
+                            </span></td>
+                            <td><span t-att-class="c.objectif_atteint ? 'badge-green':'badge-red'">
+                                <t t-esc="c.objectif ?? 0"/>
+                            </span></td>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Performance Campagnes -->
+    <div class="table-card">
+        <h3>Performance Campagnes</h3>
+        <div class="table-scroll">
+            <table class="exec-table">
+                <thead>
+                    <tr>
+                        <th>Campagne</th>
+                        <th>RDV Commandés</th>
+                        <th>Pris</th>
+                        <th>Exploités</th>
+                        <th>Absents</th>
+                        <th>Reportés</th>
+                        <th>Restants</th>
+                        <th>Taux</th>
+                        <th t-if="state.data.is_admin">Prix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="state.data.campagnes" t-as="camp" t-key="camp.id">
+                        <tr t-on-click="() => openCampaign(camp.id)">
+                            <td><strong t-esc="camp.name"/></td>
+                            <td><t t-esc="camp.commande ?? 0"/></td>
+                            <td><t t-esc="camp.pris ?? 0"/></td>
+                            <td><span class="badge-green"><t t-esc="camp.exploite ?? 0"/></span></td>
+                            <td><span class="badge-red"><t t-esc="camp.absent ?? 0"/></span></td>
+                            <td><span class="badge-orange"><t t-esc="camp.reporte ?? 0"/></span></td>
+                            <td><span t-att-class="camp.restant>0?'badge-orange':'badge-green'"><t t-esc="camp.restant ?? 0"/></span></td>
+                            <td><span t-att-class="getPerformanceClass(camp.taux_exploitation)"><t t-esc="(camp.taux_exploitation ?? 0).toFixed(1)"/>%</span></td>
+                            <td t-if="state.data.is_admin"><t t-esc="camp.price_paid ?? 0"/> €</td>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+             <div class="gantt_section">
+            <h2>Gantt Campagnes</h2>
+
+            <div t-foreach="state.data.gantt || []" t-as="g" t-key="g.name" class="gantt_item">
+                <div class="gantt_bar">
+                    <span t-esc="g.name"/>
+                    <small>( <t t-esc="g.start"/> → <t t-esc="g.end"/> )</small>
+                </div>
+            </div>
+
+        </div>
 
         </div>
     </t>

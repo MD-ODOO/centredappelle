@@ -1,101 +1,138 @@
-from odoo import http, fields
+from odoo import http, fields, api
 from odoo.http import request
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-class ExecutiveDashboard(http.Controller):
+class ExecutiveDashboardController(http.Controller):
 
     @http.route('/executive/dashboard/data', type='json', auth='user')
     def get_dashboard_data(self, period='month'):
         today = fields.Date.today()
+        start_date, end_date = self._compute_period(period, today)
 
-        # Calcul période
-        if period == 'week':
-            start_date = today - relativedelta(days=today.weekday())
-            end_date = start_date + relativedelta(days=6)
-        elif period == 'month':
-            start_date = today.replace(day=1)
-            end_date = start_date + relativedelta(months=1, days=-1)
-        elif period == 'quarter':
-            quarter = (today.month - 1) // 3 + 1
-            start_date = datetime(today.year, 3*quarter-2, 1).date()
-            end_date = start_date + relativedelta(months=3, days=-1)
-        elif period == 'year':
-            start_date = datetime(today.year, 1, 1).date()
-            end_date = datetime(today.year, 12, 31).date()
-        else:
-            start_date = today - relativedelta(months=1)
-            end_date = today
-
-        events = request.env['calendar.event'].sudo().search([
+        # Récupération des events
+        Event = request.env['calendar.event'].sudo()
+        events = Event.search([
             ('start', '>=', start_date),
             ('start', '<=', end_date)
         ])
 
+        # Récupération des stages
+        Stage = request.env['calendar.stage'].sudo()
+        absent_stage = Stage.search([('name', '=', 'Absent')], limit=1)
+        report_stage = Stage.search([('name', '=', 'Reporté')], limit=1)
+
+        # KPIs globaux
+        global_kpi = self._get_global_kpi(events, absent_stage)
+
+        # KPIs conseillers
+        conseillers_kpi = self._get_conseiller_kpi(events, start_date, end_date, absent_stage)
+
+        # KPIs campagnes
+        campagnes_kpi = self._get_campaign_kpi(events, absent_stage, report_stage)
+
         return {
-            'global': self._get_global_kpi(events),
-            'conseillers': self._get_conseiller_kpi(events, start_date, end_date),
-            'campagnes': self._get_campaign_kpi(events),
             'period': period,
-            'is_admin': request.env.user.has_group('oui_allo_rdv_pro.group_call_admin')
+            'is_admin': request.env.user.has_group('oui_allo_rdv_pro.group_call_admin'),
+            'global': global_kpi,
+            'conseillers': conseillers_kpi,
+            'campagnes': campagnes_kpi,
         }
 
-    # --- GLOBAL KPI ---
-    def _get_global_kpi(self, events):
+    # --- Calcul période ---
+    def _compute_period(self, period, today):
+        if period == 'week':
+            start = today - relativedelta(days=today.weekday())
+            end = start + relativedelta(days=6)
+        elif period == 'previous_week':
+            start = today - relativedelta(days=today.weekday()+7)
+            end = start + relativedelta(days=6)
+        elif period == 'month':
+            start = today.replace(day=1)
+            end = today
+        elif period == 'previous_month':
+            first_day_this_month = today.replace(day=1)
+            end = first_day_this_month - relativedelta(days=1)
+            start = end.replace(day=1)
+        elif period == 'quarter':
+            quarter = (today.month - 1) // 3 + 1
+            start = datetime(today.year, 3*quarter-2, 1).date()
+            end = start + relativedelta(months=3, days=-1)
+        elif period == 'previous_quarter':
+            current_quarter = (today.month - 1) // 3 + 1
+            prev_quarter = current_quarter - 1 or 4
+            year = today.year if current_quarter > 1 else today.year - 1
+            start = datetime(year, 3*prev_quarter-2, 1).date()
+            end = start + relativedelta(months=3, days=-1)
+        elif period == 'year':
+            start = datetime(today.year, 1, 1).date()
+            end = datetime(today.year, 12, 31).date()
+        else:  # previous_year
+            start = datetime(today.year-1, 1, 1).date()
+            end = datetime(today.year-1, 12, 31).date()
+        return start, end
+
+    # --- KPIs globaux ---
+    def _get_global_kpi(self, events, absent_stage):
         total = len(events)
         exploite = len(events.filtered(lambda e: e.stage_id.is_done))
-        absent = len(events.filtered(lambda e: e.stage_id.name == "Absent"))
+        absent = len(events.filtered(lambda e: absent_stage and e.stage_id.id == absent_stage.id))
         return {
             'total': total,
             'exploite': exploite,
             'absent': absent,
-            'taux_exploitation': (exploite / total * 100) if total else 0,
-            'taux_no_show': (absent / total * 100) if total else 0,
+            'taux_exploitation': round(exploite / total * 100, 2) if total else 0,
+            'taux_no_show': round(absent / total * 100, 2) if total else 0,
         }
 
-    # --- CONSEILLERS KPI ---
-    def _get_conseiller_kpi(self, events, start_date, end_date):
-        data = {}
+    # --- KPIs conseillers ---
+    def _get_conseiller_kpi(self, events, start_date, end_date, absent_stage):
+        env = request.env
+        Event = env['calendar.event'].sudo()
         days = (end_date - start_date).days + 1
         objectif = round((days / 3) * 2)
 
-        for event in events:
-            for conseiller in event.conseiller_id:
-                if conseiller.id not in data:
-                    data[conseiller.id] = {
-                        'id': conseiller.id,
-                        'name': conseiller.name,
-                        'pris': 0,
-                        'exploite': 0,
-                        'absent': 0,
-                        'objectif': objectif,
-                    }
-                data[conseiller.id]['pris'] += 1
-                if event.stage_id.is_done:
-                    data[conseiller.id]['exploite'] += 1
-                if event.stage_id.name == "Absent":
-                    data[conseiller.id]['absent'] += 1
+        grouped = Event.read_group(
+            [('start', '>=', start_date), ('start', '<=', end_date), ('conseiller_id', '!=', False)],
+            ['conseiller_id', 'stage_id'], ['conseiller_id', 'stage_id'], lazy=False
+        )
+
+        data = {}
+        for group in grouped:
+            conseiller_id = group['conseiller_id'][0]
+            conseiller_name = group['conseiller_id'][1]
+            stage_id = group.get('stage_id')
+            count = group.get('__count', 0)
+
+            if conseiller_id not in data:
+                data[conseiller_id] = {'id': conseiller_id, 'name': conseiller_name, 'pris':0, 'exploite':0, 'absent':0, 'objectif':objectif}
+
+            data[conseiller_id]['pris'] += count
+            if stage_id:
+                stage_record = env['calendar.stage'].browse(stage_id[0])
+                if stage_record.is_done:
+                    data[conseiller_id]['exploite'] += count
+                if absent_stage and stage_id[0] == absent_stage.id:
+                    data[conseiller_id]['absent'] += count
 
         for c in data.values():
-            pris = c['pris']
-            exploite = c['exploite']
-            absent = c['absent']
-            c['taux_exploitation'] = (exploite / pris * 100) if pris else 0
-            c['taux_no_show'] = (absent / pris * 100) if pris else 0
+            pris, exploite, absent = c['pris'], c['exploite'], c['absent']
+            c['taux_exploitation'] = round(exploite / pris * 100, 2) if pris else 0
+            c['taux_no_show'] = round(absent / pris * 100, 2) if pris else 0
             c['objectif_atteint'] = exploite >= objectif
 
         return list(data.values())
 
-    # --- CAMPAGNES KPI ---
-    def _get_campaign_kpi(self, events):
+    # --- KPIs campagnes ---
+    def _get_campaign_kpi(self, events, absent_stage, report_stage):
         campaigns = request.env['oui.campaign'].sudo().search([])
         result = []
         for campaign in campaigns:
             ev = events.filtered(lambda e: e.campaign_id.id == campaign.id)
             pris = len(ev)
             exploite = len(ev.filtered(lambda e: e.stage_id.is_done))
-            absent = len(ev.filtered(lambda e: e.stage_id.name == "Absent"))
-            reportes = len(ev.filtered(lambda e: e.stage_id.name == "Reporté"))
+            absent = len(ev.filtered(lambda e: absent_stage and e.stage_id.id == absent_stage.id))
+            reportes = len(ev.filtered(lambda e: report_stage and e.stage_id.id == report_stage.id))
             result.append({
                 'id': campaign.id,
                 'name': campaign.name,
@@ -105,8 +142,8 @@ class ExecutiveDashboard(http.Controller):
                 'absent': absent,
                 'reporte': reportes,
                 'restant': campaign.total_volume - campaign.rdv_realised,
-                'taux_exploitation': (exploite / pris * 100) if pris else 0,
+                'taux_exploitation': round(exploite / pris * 100, 2) if pris else 0,
                 'price_paid': campaign.price,
-                'conseillers': [],  # éventuellement remplir par campagne
+                'conseillers': [],
             })
         return result

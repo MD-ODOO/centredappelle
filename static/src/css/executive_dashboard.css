@@ -1,144 +1,149 @@
-/* === Executive Dashboard Styles === */
+/* Container général avec scroll */
 .exec-dashboard {
-    padding: 30px;
-    background: #f4f7fb;
-    font-family: "Roboto", "Helvetica", sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    height: 90vh;          /* Hauteur maximale du dashboard */
+    overflow-y: auto;      /* Scroll vertical si contenu trop grand */
+    gap: 30px;
 }
 
-/* --- Period Filter --- */
-.period-filter {
-    margin-bottom: 20px;
-}
-.period-filter button {
-    background: #1f2937;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    margin-right: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background 0.2s ease;
-}
-.period-filter button:hover {
-    background: #111827;
-}
-
-/* --- KPI Row --- */
+/* KPI globaux */
 .kpi-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+.kpi-card {
+    flex: 1 1 150px;
+    padding: 20px;
+    border-radius: 8px;
+    color: #fff;
+    text-align: center;
+}
+.kpi-card h2 {
+    font-size: 28px;
+    margin: 0;
+}
+.kpi-card span {
+    display: block;
+    margin-top: 5px;
+}
+
+/* Couleurs KPI */
+.kpi-card.blue { background-color: #3498db; }
+.kpi-card.green { background-color: #2ecc71; }
+.kpi-card.red { background-color: #e74c3c; }
+.kpi-card.purple { background-color: #9b59b6; }
+
+/* Top row : top 5 + performance */
+.top-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.top_card {
+    flex: 1 1 250px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    min-width: 220px;
+}
+.top_card h3 {
+    margin-top: 0;
+    font-size: 16px;
+}
+.top_item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+.top_rank {
+    width: 25px;
+    font-weight: bold;
+}
+.top_content {
+    margin-left: 10px;
+}
+.performance_badge {
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+    min-width: 40px;
+    text-align: center;
+}
+.badge-green { background-color: #2ecc71; }
+.badge-orange { background-color: #f39c12; }
+.badge-red { background-color: #e74c3c; }
+
+/* Graphiques */
+.chart_grid {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    margin-top: 20px;
 }
-.kpi-card {
-    flex: 1;
-    min-width: 150px;
-    padding: 25px;
-    border-radius: 12px;
-    color: white;
-    text-align: center;
-    font-weight: 600;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease;
+.chart_card {
+    flex: 1 1 300px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    min-width: 280px;
 }
-.kpi-card:hover {
-    transform: translateY(-2px);
-}
-.kpi-card.blue { background: #2563eb; }
-.kpi-card.green { background: #16a34a; }
-.kpi-card.red { background: #dc2626; }
-.kpi-card.purple { background: #7c3aed; }
+.chart_card h3 { margin-top: 0; font-size: 16px; }
 
-/* --- Tables --- */
+/* Tables */
+.table-scroll {
+    overflow-x: auto;
+}
 .exec-table {
     width: 100%;
-    margin-top: 25px;
-    background: white;
-    border-radius: 10px;
-    overflow: hidden;
     border-collapse: collapse;
-    font-size: 14px;
+}
+.exec-table th, .exec-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
 }
 .exec-table th {
-    background: #1f2937;
-    color: white;
-    padding: 12px;
-    text-align: left;
-}
-.exec-table td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
-.exec-table tr:hover {
-    background: #f3f4f6;
-    cursor: pointer;
+    background-color: #f0f0f0;
 }
 
-/* --- Badges --- */
-.badge-green {
-    background: #28a745;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
+/* Gantt */
+.gantt_section {
+    margin-top: 30px;
+}
+.gantt_item {
+    margin-bottom: 10px;
+}
+.gantt_bar {
+    background: #3498db;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
     font-size: 12px;
-    font-weight: 500;
-    display: inline-block;
-    text-align: center;
-}
-.badge-red {
-    background: #dc3545;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    display: inline-block;
-    text-align: center;
-}
-.badge-orange {
-    background: #ff9800;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    display: inline-block;
-    text-align: center;
 }
 
-/* --- Sub Tables (for Conseillers inside Campaigns) --- */
-.sub-row {
-    background: #f9fafb;
+/* Scroll vertical interne si beaucoup de données dans une table ou top_card */
+.top_card, .chart_card, .table-scroll {
+    max-height: 300px;
+    overflow-y: auto;
 }
-.sub-table {
-    width: 100%;
-    font-size: 13px;
-    border-collapse: collapse;
-}
-.sub-table th {
-    background: #374151;
-    color: white;
-    padding: 8px;
-    text-align: left;
-}
-.sub-table td {
-    padding: 8px;
-    border-bottom: 1px solid #e5e7eb;
+/* Conteneur pour afficher tables côte à côte */
+.flex-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap; /* si l’écran est trop petit, les tables passent en dessous */
 }
 
-.exec-dashboard table {
-    width: 100%;
-    overflow-x: auto;
-    display: block;
-}
-
-/* --- Responsive --- */
-@media (max-width: 768px) {
-    .kpi-row {
-        flex-direction: column;
-    }
-    .period-filter button {
-        margin-bottom: 8px;
-    }
+/* Chaque table dans un "card" scrollable */
+.table-card {
+    flex: 1 1 500px; /* largeur minimale 500px, flexibilité maximale */
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    max-height: 400px; /* scroll si beaucoup de lignes */
+    overflow-y: auto;
 }

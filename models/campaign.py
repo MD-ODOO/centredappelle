@@ -1,7 +1,8 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
-from datetime import datetime
+from datetime import datetime,timedelta
 from dateutil.relativedelta import relativedelta
+
 
 
 
@@ -324,8 +325,7 @@ class Campaign(models.Model):
             'campaign_id': self.id,
             'start': fields.Datetime.now(),
             'stop': fields.Datetime.now(),
-            'conseiller_id': self.campaign_manager_id.id or self.env.user.id,
-        })
+            'conseiller_id': [(6, 0, [self.campaign_manager_id.id or self.env.user.id])],        })
 
         return {
             'type': 'ir.actions.act_window',
@@ -469,8 +469,7 @@ class Campaign(models.Model):
                 'default_campaign_id': self.id,
                 'default_partner_id': self.client_id.id,
                 'default_responsable_id': self.campaign_manager_id.id,
-                'default_conseiller_ids': [(6, 0, self.conseiller_ids.ids)],
-                'default_rdv_line_ids.conseiller_ids': [(6, 0, self.conseiller_ids.ids)],
+                'default_conseiller_ids': [(6, 0, self.conseiller_ids.ids)]
 
             }
         }
@@ -509,17 +508,17 @@ class Campaign(models.Model):
                 ('campaign_id', '=', self.id) ],
         }
     
+
+
     @api.model
     def get_executive_dashboard_data(self, period='month'):
-        """Retourne les données du dashboard exécutif pour une période donnée"""
-
         today = fields.Date.today()
         start_date = today
         end_date = today
 
-        # Déterminer la période
+        # ===== Détermination période =====
         if period == 'week':
-            start_date = today - timedelta(days=today.weekday())  # lundi de la semaine
+            start_date = today - timedelta(days=today.weekday())
             end_date = start_date + timedelta(days=6)
         elif period == 'month':
             start_date = today.replace(day=1)
@@ -532,35 +531,34 @@ class Campaign(models.Model):
             start_date = datetime(today.year, 1, 1).date()
             end_date = datetime(today.year, 12, 31).date()
 
-        # Filtrer les RDV sur la période
-        Event = self.env['calendar.event']
+        # ===== Récupération RDV =====
+        Event = self.env['calendar.event'].sudo()
         events = Event.search([('start', '>=', start_date), ('start', '<=', end_date)])
 
-        # KPI globaux
         total_rdv = len(events)
         exploite_rdv = len(events.filtered(lambda e: e.stage_id.is_done))
         absent_rdv = len(events.filtered(lambda e: e.stage_id.name == 'Absent'))
-        taux_exploitation = (exploite_rdv / total_rdv * 100) if total_rdv else 0
 
         global_data = {
             'total': total_rdv,
             'exploite': exploite_rdv,
             'absent': absent_rdv,
-            'taux_exploitation': taux_exploitation,
+            'taux_exploitation': (exploite_rdv / total_rdv * 100) if total_rdv else 0,
+            'taux_no_show': (absent_rdv / total_rdv * 100) if total_rdv else 0,
         }
 
-        # KPI par conseiller
-        conseillers = self.env['res.users'].search([('share', '=', False)])  # tous les conseillers
+        # ===== KPI Conseillers =====
+        conseillers = self.env['res.users'].sudo().search([('share', '=', False)])
+        days = (end_date - start_date).days + 1
+        objectif = round((days / 3) * 2)
         conseillers_data = []
 
         for c in conseillers:
-            c_events = events.filtered(lambda e: c.id in e.conseiller_id.ids)
+            c_events = events.filtered(lambda e: e.conseiller_id.id == c.id)
             pris = len(c_events)
             exploite = len(c_events.filtered(lambda e: e.stage_id.is_done))
             absent = len(c_events.filtered(lambda e: e.stage_id.name == 'Absent'))
             taux = (exploite / pris * 100) if pris else 0
-            objectif = ((end_date - start_date).days // 3) * 2  # 2 RDV tous les 3 jours
-            objectif_atteint = pris >= objectif
 
             conseillers_data.append({
                 'id': c.id,
@@ -570,29 +568,25 @@ class Campaign(models.Model):
                 'absent': absent,
                 'taux_exploitation': taux,
                 'objectif': objectif,
-                'objectif_atteint': objectif_atteint,
+                'objectif_atteint': exploite >= objectif
             })
 
-        # KPI par campagne
-        campagnes = self.search([('date_start', '<=', end_date), ('date_end', '>=', start_date)])
+        # ===== KPI Campagnes =====
+        campaigns = self.search([('date_start', '<=', end_date), ('date_end', '>=', start_date)])
+        is_admin = self.env.user.has_group('oui_allo_rdv_pro.group_call_admin')
         campagnes_data = []
 
-        is_admin = self.env.user.has_group('oui_allo_rdv_pro.group_call_admin')
-
-        for camp in campagnes:
+        for camp in campaigns:
             camp_events = events.filtered(lambda e: e.campaign_id.id == camp.id)
-            commande = camp.monthly_rdv_volume
             pris = len(camp_events)
             exploite = len(camp_events.filtered(lambda e: e.stage_id.is_done))
             absent = len(camp_events.filtered(lambda e: e.stage_id.name == 'Absent'))
             reporte = len(camp_events.filtered(lambda e: e.stage_id.name == 'Reporté'))
-            restant = max(commande - pris, 0)
-            taux = (exploite / pris * 100) if pris else 0
+            restant = max(camp.monthly_rdv_volume - pris, 0)
 
-            # Conseillers stats
             conseillers_camp = []
             for c in camp.conseiller_ids:
-                c_ev = camp_events.filtered(lambda e: c.id in e.conseiller_id.ids)
+                c_ev = camp_events.filtered(lambda e: e.conseiller_id.id == c.id)
                 c_pris = len(c_ev)
                 c_exploite = len(c_ev.filtered(lambda e: e.stage_id.is_done))
                 c_taux = (c_exploite / c_pris * 100) if c_pris else 0
@@ -601,30 +595,73 @@ class Campaign(models.Model):
                     'name': c.name,
                     'pris': c_pris,
                     'exploite': c_exploite,
-                    'taux': c_taux,
+                    'taux': c_taux
                 })
 
             campagnes_data.append({
                 'id': camp.id,
                 'name': camp.name,
-                'commande': commande,
+                'commande': camp.monthly_rdv_volume,
                 'pris': pris,
                 'exploite': exploite,
                 'absent': absent,
                 'reporte': reporte,
                 'restant': restant,
-                'taux_exploitation': taux,
+                'taux_exploitation': (exploite / pris * 100) if pris else 0,
                 'price_paid': camp.price if is_admin else 0,
-                'conseillers': conseillers_camp,
+                'start': str(camp.date_start),
+                'end': str(camp.date_end),
+                'conseillers': conseillers_camp
             })
+        # ===== Bar Performance Conseillers =====
+        bar_performance = [
+            {
+                'name': c['name'],
+                'taux': round(c['taux_exploitation'], 2)
+            }
+            for c in conseillers_data
+        ]
+
+        # ===== Evolution mensuelle RDV =====
+        monthly_evolution = []
+        for i in range(1, 13):
+            month_start = datetime(today.year, i, 1).date()
+            month_end = month_start + relativedelta(months=1, days=-1)
+
+            count = Event.search_count([
+                ('start', '>=', datetime.combine(month_start, datetime.min.time())),
+                ('start', '<=', datetime.combine(month_end, datetime.max.time()))
+            ])
+
+            monthly_evolution.append({
+                'month': month_start.strftime("%b"),
+                'value': count
+            })
+
+        # ===== Top 5 Campagnes et Conseillers =====
+        top_campaigns = sorted(campagnes_data, key=lambda x: x['exploite'], reverse=True)[:5]
+        top_conseillers = sorted(conseillers_data, key=lambda x: x['exploite'], reverse=True)[:5]
+
+        # ===== Données pour graphiques =====
+        pie_campaigns = [{'name': c['name'], 'value': c['exploite']} for c in campagnes_data]
+        pie_conseillers = [{'name': c['name'], 'value': c['exploite']} for c in conseillers_data]
+
+        # Gantt : liste des campagnes avec start/end
+        gantt_data = [{'name': c['name'], 'start': c['start'], 'end': c['end']} for c in campagnes_data]
 
         return {
             'global': global_data,
             'conseillers': conseillers_data,
             'campagnes': campagnes_data,
+            'top_campaigns': top_campaigns,
+            'top_conseillers': top_conseillers,
+            'pie_campaigns': pie_campaigns,
+            'pie_conseillers': pie_conseillers,
+            'gantt': gantt_data,
             'is_admin': is_admin,
+            'bar_performance': bar_performance,
+            'monthly_evolution': monthly_evolution,
         }
-
 class AccountMove(models.Model):
     _inherit = 'account.move'
 

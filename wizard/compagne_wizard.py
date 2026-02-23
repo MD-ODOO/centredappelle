@@ -13,55 +13,38 @@ class CampaignGenerateRdvWizard(models.TransientModel):
     conseiller_ids = fields.Many2many(
         'res.users',
         string="Conseillers",
-        domain="[('id', 'in', available_conseiller_ids)]",
+        
     )
-    available_conseiller_ids = fields.Many2many(
-        'res.users',
-        compute='_compute_available_conseiller_ids',
-        string="Conseillers de la campagne",
-    )
+   
     rdv_line_ids = fields.One2many(
         'campaign.generate.rdv.line',
         'wizard_id',
         string="Dates RDV",
     )
 
-    @api.depends('campaign_id', 'campaign_id.conseiller_ids')
-    def _compute_available_conseiller_ids(self):
-        for wizard in self:
-            wizard.available_conseiller_ids = wizard.campaign_id.conseiller_ids
-
-    @api.onchange('campaign_id')
-    def _onchange_campaign_id(self):
-        if self.campaign_id:
-            self.conseiller_ids = self.campaign_id.conseiller_ids
-
-    @api.onchange('conseiller_ids')
-    def _onchange_conseiller_ids(self):
-        for line in self.rdv_line_ids:
-            line.conseiller_ids = self.conseiller_ids
+   
 
     def action_generate_rdv(self):
+
         calendar_event_model = self.env['calendar.event']
 
         for line in self.rdv_line_ids:
-            conseillers = line.conseiller_ids or self.conseiller_ids
-            if not conseillers:
+
+            if not line.conseiller_ids:
                 continue
 
-            calendar_event_model.sudo().create({
+            calendar_event_model.create({
                 'name': self.campaign_id.name,
                 'start': line.start_datetime,
                 'stop': line.start_datetime + timedelta(hours=line.duration),
                 'campaign_id': self.campaign_id.id,
                 'campaign_manager_id': self.responsable_id.id,
-                'conseiller_id': [(6, 0, conseillers.ids)],
+                'conseiller_id': line.conseiller_ids.id,
                 'partner_id': self.partner_id.id,
                 'partner_ids': [(6, 0, [self.partner_id.id])],
             })
 
         return {'type': 'ir.actions.act_window_close'}
-
 
 class CampaignGenerateRdvLine(models.TransientModel):
     _name = 'campaign.generate.rdv.line'
@@ -69,22 +52,29 @@ class CampaignGenerateRdvLine(models.TransientModel):
 
     wizard_id = fields.Many2one('campaign.generate.rdv.wizard')
     start_datetime = fields.Datetime("Début RDV", required=True)
-    conseiller_ids = fields.Many2many(
+    conseiller_ids = fields.Many2one(
     'res.users',
-    string="Conseillers",
+    string="Conseiller",
+    required=True,
+    domain="[('id', 'in', allowed_conseillers)]"
 )
-    available_conseiller_ids = fields.Many2many(
-        'res.users',
-        related='wizard_id.conseiller_ids',
-        string="Conseillers disponibles",
-    )
+
+    allowed_conseillers = fields.Many2many(
+    'res.users',
+    compute='_compute_allowed_conseillers',
+)
     duration = fields.Float("Durée (heures)", default=1.0)
 
-    @api.onchange('wizard_id')
-    def _onchange_wizard_id(self):
-        if self.wizard_id and self.wizard_id.conseiller_ids:
-            self.conseiller_ids = self.wizard_id.conseiller_ids
 
+    @api.depends('wizard_id.conseiller_ids')
+    def _compute_allowed_conseillers(self):
+        for rec in self:
+            if rec.wizard_id and rec.wizard_id.conseiller_ids:
+                rec.allowed_conseillers = rec.wizard_id.conseiller_ids
+            else:
+                rec.allowed_conseillers = False
+
+  
 
 #  from odoo import models, fields, api,_
 # from datetime import timedelta,datetime

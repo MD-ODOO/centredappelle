@@ -58,6 +58,12 @@
 
     <field name="arch" type="xml">
      <xpath expr="//header" position="inside">
+     <button name="action_mark_absent"
+            type="object"
+            string="Marquer Absent"
+            class="btn-danger"
+            
+           />
             <field name="stage_id"
                 widget="statusbar"
                 options="{'clickable': true}"
@@ -69,7 +75,7 @@
 
             <field name="campaign_id"/>
 
-            <field name="conseiller_id" widget="many2many_tags"/>
+            <field name="conseiller_id" />
 
         </xpath>
         <xpath expr="//field[@name='partner_ids']" position="attributes">
@@ -165,7 +171,6 @@
     </field>
 </record>
 
-<odoo>
     <!-- RDV par mois / semaine / trimestre / année -->
     <record id="view_dashboard_graph_rdv_time" model="ir.ui.view">
         <field name="name">calendar.event.graph.time</field>
@@ -201,32 +206,6 @@
             </graph>
         </field>
     </record>
-</odoo>
-
-<!-- Graph RDV par période -->
-<record id="action_graph_rdv_time" model="ir.actions.act_window">
-    <field name="name">RDV par période</field>
-    <field name="res_model">calendar.event</field>
-    <field name="view_mode">graph</field>
-    <field name="view_id" ref="view_dashboard_graph_rdv_time"/>
-</record>
-
-<!-- Graph Performance Conseillers -->
-<record id="action_graph_conseiller" model="ir.actions.act_window">
-    <field name="name">Performance Conseillers</field>
-    <field name="res_model">calendar.event</field>
-    <field name="view_mode">graph</field>
-    <field name="view_id" ref="view_dashboard_graph_conseiller"/>
-</record>
-
-<!-- Graph Combiné KPI + Tendances -->
-<record id="action_graph_combined" model="ir.actions.act_window">
-    <field name="name">Tendances ET KPI</field>
-    <field name="res_model">calendar.event</field>
-    <field name="view_mode">graph</field>
-    <field name="view_id" ref="view_dashboard_graph_combined"/>
-</record>
-
 
 
 
