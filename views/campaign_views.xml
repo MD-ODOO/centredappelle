@@ -89,11 +89,7 @@
                         type="object"
                         class="btn-primary"
                         invisible="state == 'open'"/>
-                 <button name="action_create_meeting"
-                        type="object"
-                        string="Créer RDV"
-                        class="btn-primary"
-                        invisible="state == 'closed'"/>
+                
                 <button type="object"
                         name="action_view_realised"
                         class="btn-success"
@@ -140,7 +136,7 @@
 
                     <button name="action_view_invoice"
                             type="object"
-                            string="Facture"
+                            string="Facturation"
                             class="oe_stat_button"
                             icon="fa-file-invoice"
                             groups="oui_allo_rdv_pro.group_call_admin">
@@ -201,8 +197,7 @@
         <field name="date_start"/>
         <field name="date_end"/>
         <field name="monthly_rdv_volume"/>
-        <field name="rdv_carry_over"/>
-        <field name="agenda_id"/>
+       
     </group>
 
 </group>
@@ -212,7 +207,7 @@
 <field name="contract_attachment_ids" widget="many2many_binary"/>
 </group>
 <group>
-        <field name="duration_months"/>
+        <field name="duration_months" string='Nombre de Mois'/>
         
 </group>
 </group>

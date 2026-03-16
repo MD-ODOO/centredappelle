@@ -114,7 +114,7 @@ class Campaign(models.Model):
     )
     rdv_month_count = fields.Integer('Rendez-Vous Mensuel', compute="_compute_rdv_month_count",store=True )
 
-    invoice_count = fields.Integer(
+    invoice_count = fields.Integer( string='Factures',
         compute="_compute_invoice_count"
     )
 
@@ -306,33 +306,7 @@ class Campaign(models.Model):
     # CREATION EVENEMENT
     # ------------------------
 
-    def action_create_meeting(self):
-        self.ensure_one()
-
-        today = fields.Date.today()
-
-        if self.state == 'closed':
-            raise ValidationError("Impossible de créer un événement sur une campagne fermée.")
-
-        if self.date_start and today < self.date_start:
-            raise ValidationError("La campagne n'a pas encore commencé.")
-
-        if self.date_end and today > self.date_end:
-            raise ValidationError("La campagne est expirée.")
-
-        event = self.env['calendar.event'].create({
-            'name': self.name,
-            'campaign_id': self.id,
-            'start': fields.Datetime.now(),
-            'stop': fields.Datetime.now(),
-            'conseiller_id': [(6, 0, [self.campaign_manager_id.id or self.env.user.id])],        })
-
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'calendar.event',
-            'view_mode': 'form',
-            'res_id': event.id,
-        }
+    
 
 
     # ------------------------
@@ -511,156 +485,262 @@ class Campaign(models.Model):
 
 
     @api.model
-    def get_executive_dashboard_data(self, period='month'):
+    def get_executive_dashboard_data(self, period="month"):
+
         today = fields.Date.today()
+
         start_date = today
         end_date = today
 
-        # ===== Détermination période =====
-        if period == 'week':
+        # ========================
+        # Détermination période
+        # ========================
+
+        if period == "week":
+
             start_date = today - timedelta(days=today.weekday())
             end_date = start_date + timedelta(days=6)
-        elif period == 'month':
+
+        elif period == "month":
+
             start_date = today.replace(day=1)
             end_date = start_date + relativedelta(months=1, days=-1)
-        elif period == 'quarter':
+
+        elif period == "quarter":
+
             quarter = (today.month - 1) // 3 + 1
-            start_date = datetime(today.year, 3*quarter-2, 1).date()
+            start_date = datetime(today.year, 3 * quarter - 2, 1).date()
             end_date = start_date + relativedelta(months=3, days=-1)
-        elif period == 'year':
+
+        elif period == "year":
+
             start_date = datetime(today.year, 1, 1).date()
             end_date = datetime(today.year, 12, 31).date()
 
-        # ===== Récupération RDV =====
-        Event = self.env['calendar.event'].sudo()
-        events = Event.search([('start', '>=', start_date), ('start', '<=', end_date)])
+        Event = self.env["calendar.event"].sudo()
+
+        events = Event.search([
+            ("start", ">=", start_date),
+            ("start", "<=", end_date)
+        ])
+
+        # ========================
+        # KPI GLOBAL
+        # ========================
 
         total_rdv = len(events)
-        exploite_rdv = len(events.filtered(lambda e: e.stage_id.is_done))
-        absent_rdv = len(events.filtered(lambda e: e.stage_id.name == 'Absent'))
+
+        exploite_rdv = len(
+            events.filtered(lambda e: e.stage_id and e.stage_id.is_done)
+        )
+
+        absent_rdv = len(
+            events.filtered(lambda e: e.stage_id and e.stage_id.name == "Absent")
+        )
 
         global_data = {
-            'total': total_rdv,
-            'exploite': exploite_rdv,
-            'absent': absent_rdv,
-            'taux_exploitation': (exploite_rdv / total_rdv * 100) if total_rdv else 0,
-            'taux_no_show': (absent_rdv / total_rdv * 100) if total_rdv else 0,
+            "total": total_rdv,
+            "exploite": exploite_rdv,
+            "absent": absent_rdv,
+            "taux_exploitation": round((exploite_rdv / total_rdv * 100), 2) if total_rdv else 0,
+            "taux_no_show": round((absent_rdv / total_rdv * 100), 2) if total_rdv else 0,
         }
 
-        # ===== KPI Conseillers =====
-        conseillers = self.env['res.users'].sudo().search([('share', '=', False)])
+        # ========================
+        # KPI AUJOURD'HUI
+        # ========================
+
+        today_events = events.filtered(
+            lambda e: e.start and e.start.date() == today
+        )
+
+        today_data = {
+            "total": len(today_events),
+            "exploite": len(today_events.filtered(lambda e: e.stage_id and e.stage_id.is_done)),
+            "absent": len(today_events.filtered(lambda e: e.stage_id and e.stage_id.name == "Absent")),
+            "conseillers": len(set(today_events.mapped("conseiller_id.id")))
+        }
+
+        # ========================
+        # CONSEILLERS
+        # ========================
+
+        conseillers = self.env["res.users"].sudo().search([
+            ("share", "=", False),
+            ("active", "=", True)
+        ])
+
         days = (end_date - start_date).days + 1
         objectif = round((days / 3) * 2)
+
         conseillers_data = []
 
         for c in conseillers:
-            c_events = events.filtered(lambda e: e.conseiller_id.id == c.id)
+
+            c_events = events.filtered(lambda e: e.conseiller_id and e.conseiller_id.id == c.id)
+
             pris = len(c_events)
-            exploite = len(c_events.filtered(lambda e: e.stage_id.is_done))
-            absent = len(c_events.filtered(lambda e: e.stage_id.name == 'Absent'))
-            taux = (exploite / pris * 100) if pris else 0
+
+            exploite = len(c_events.filtered(lambda e: e.stage_id and e.stage_id.is_done))
+
+            absent = len(c_events.filtered(lambda e: e.stage_id and e.stage_id.name == "Absent"))
+
+            taux = round((exploite / pris * 100), 2) if pris else 0
 
             conseillers_data.append({
-                'id': c.id,
-                'name': c.name,
-                'pris': pris,
-                'exploite': exploite,
-                'absent': absent,
-                'taux_exploitation': taux,
-                'objectif': objectif,
-                'objectif_atteint': exploite >= objectif
+                "id": c.id,
+                "name": c.name,
+                "pris": pris,
+                "exploite": exploite,
+                "absent": absent,
+                "taux_exploitation": taux,
+                "objectif": objectif,
+                "objectif_atteint": exploite >= objectif
             })
 
-        # ===== KPI Campagnes =====
-        campaigns = self.search([('date_start', '<=', end_date), ('date_end', '>=', start_date)])
-        is_admin = self.env.user.has_group('oui_allo_rdv_pro.group_call_admin')
+        # ========================
+        # CAMPAGNES
+        # ========================
+
+        campaigns = self.search([])
+
+        is_admin = self.env.user.has_group(
+            "oui_allo_rdv_pro.group_call_admin"
+        )
+
         campagnes_data = []
 
         for camp in campaigns:
-            camp_events = events.filtered(lambda e: e.campaign_id.id == camp.id)
+
+            camp_events = events.filtered(
+                lambda e: e.campaign_id and e.campaign_id.id == camp.id
+            )
+
             pris = len(camp_events)
-            exploite = len(camp_events.filtered(lambda e: e.stage_id.is_done))
-            absent = len(camp_events.filtered(lambda e: e.stage_id.name == 'Absent'))
-            reporte = len(camp_events.filtered(lambda e: e.stage_id.name == 'Reporté'))
+
+            exploite = len(
+                camp_events.filtered(lambda e: e.stage_id and e.stage_id.is_done)
+            )
+
+            absent = len(
+                camp_events.filtered(lambda e: e.stage_id and e.stage_id.name == "Absent")
+            )
+
+            reporte = len(
+                camp_events.filtered(lambda e: e.stage_id and e.stage_id.name == "Reporté")
+            )
+
             restant = max(camp.monthly_rdv_volume - pris, 0)
 
-            conseillers_camp = []
-            for c in camp.conseiller_ids:
-                c_ev = camp_events.filtered(lambda e: e.conseiller_id.id == c.id)
-                c_pris = len(c_ev)
-                c_exploite = len(c_ev.filtered(lambda e: e.stage_id.is_done))
-                c_taux = (c_exploite / c_pris * 100) if c_pris else 0
-                conseillers_camp.append({
-                    'id': c.id,
-                    'name': c.name,
-                    'pris': c_pris,
-                    'exploite': c_exploite,
-                    'taux': c_taux
-                })
-
             campagnes_data.append({
-                'id': camp.id,
-                'name': camp.name,
-                'commande': camp.monthly_rdv_volume,
-                'pris': pris,
-                'exploite': exploite,
-                'absent': absent,
-                'reporte': reporte,
-                'restant': restant,
-                'taux_exploitation': (exploite / pris * 100) if pris else 0,
-                'price_paid': camp.price if is_admin else 0,
-                'start': str(camp.date_start),
-                'end': str(camp.date_end),
-                'conseillers': conseillers_camp
+                "id": camp.id,
+                "name": camp.name,
+                "commande": camp.monthly_rdv_volume,
+                "pris": pris,
+                "exploite": exploite,
+                "absent": absent,
+                "reporte": reporte,
+                "restant": restant,
+                "taux_exploitation": round((exploite / pris * 100), 2) if pris else 0,
+                "price_paid": camp.price if is_admin else 0,
+                "start": str(camp.date_start or ""),
+                "end": str(camp.date_end or ""),
             })
-        # ===== Bar Performance Conseillers =====
+
+        # ========================
+        # RDV PAR DATE
+        # ========================
+
+        rdv_by_date = []
+
+        for ev in events:
+
+            rdv_by_date.append({
+                "id": ev.id,
+                "date": str(ev.start.date()) if ev.start else "",
+                "campaign": ev.campaign_id.name if ev.campaign_id else "",
+                "conseiller": ev.conseiller_id.name if ev.conseiller_id else "",
+                "pris": 1,
+                "exploite": 1 if ev.stage_id and ev.stage_id.is_done else 0,
+                "absent": 1 if ev.stage_id and ev.stage_id.name == "Absent" else 0,
+                "reporte": 1 if ev.stage_id and ev.stage_id.name == "Reporté" else 0,
+                "taux": 100 if ev.stage_id and ev.stage_id.is_done else 0
+            })
+
+        # ========================
+        # PIE CHART
+        # ========================
+
+        pie_campaigns = [
+            {"name": c["name"], "value": c["exploite"]}
+            for c in campagnes_data
+        ]
+
+        pie_conseillers = [
+            {"name": c["name"], "value": c["exploite"]}
+            for c in conseillers_data
+        ]
+
         bar_performance = [
             {
-                'name': c['name'],
-                'taux': round(c['taux_exploitation'], 2)
+                "name": c["name"],
+                "taux": c["taux_exploitation"]
             }
             for c in conseillers_data
         ]
 
-        # ===== Evolution mensuelle RDV =====
+        # ========================
+        # EVOLUTION MENSUELLE
+        # ========================
+
         monthly_evolution = []
+
         for i in range(1, 13):
+
             month_start = datetime(today.year, i, 1).date()
+
             month_end = month_start + relativedelta(months=1, days=-1)
 
             count = Event.search_count([
-                ('start', '>=', datetime.combine(month_start, datetime.min.time())),
-                ('start', '<=', datetime.combine(month_end, datetime.max.time()))
+                ("start", ">=", month_start),
+                ("start", "<=", month_end)
             ])
 
             monthly_evolution.append({
-                'month': month_start.strftime("%b"),
-                'value': count
+                "month": month_start.strftime("%b"),
+                "value": count
             })
 
-        # ===== Top 5 Campagnes et Conseillers =====
-        top_campaigns = sorted(campagnes_data, key=lambda x: x['exploite'], reverse=True)[:5]
-        top_conseillers = sorted(conseillers_data, key=lambda x: x['exploite'], reverse=True)[:5]
+        # ========================
+        # TOP
+        # ========================
 
-        # ===== Données pour graphiques =====
-        pie_campaigns = [{'name': c['name'], 'value': c['exploite']} for c in campagnes_data]
-        pie_conseillers = [{'name': c['name'], 'value': c['exploite']} for c in conseillers_data]
+        top_campaigns = sorted(
+            campagnes_data,
+            key=lambda x: x["exploite"],
+            reverse=True
+        )[:5]
 
-        # Gantt : liste des campagnes avec start/end
-        gantt_data = [{'name': c['name'], 'start': c['start'], 'end': c['end']} for c in campagnes_data]
+        top_conseillers = sorted(
+            conseillers_data,
+            key=lambda x: x["exploite"],
+            reverse=True
+        )[:5]
 
         return {
-            'global': global_data,
-            'conseillers': conseillers_data,
-            'campagnes': campagnes_data,
-            'top_campaigns': top_campaigns,
-            'top_conseillers': top_conseillers,
-            'pie_campaigns': pie_campaigns,
-            'pie_conseillers': pie_conseillers,
-            'gantt': gantt_data,
-            'is_admin': is_admin,
-            'bar_performance': bar_performance,
-            'monthly_evolution': monthly_evolution,
+
+            "global": global_data,
+            "today": today_data,
+            "conseillers": conseillers_data,
+            "campagnes": campagnes_data,
+            "rdv_by_date": rdv_by_date,
+            "top_campaigns": top_campaigns,
+            "top_conseillers": top_conseillers,
+            "pie_campaigns": pie_campaigns,
+            "pie_conseillers": pie_conseillers,
+            "bar_performance": bar_performance,
+            "monthly_evolution": monthly_evolution,
+            "is_admin": is_admin,
         }
 class AccountMove(models.Model):
     _inherit = 'account.move'

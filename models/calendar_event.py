@@ -16,6 +16,11 @@ class CalendarEvent(models.Model):
         string="Responsable de campagne"
         )
     
+    partner_id = fields.Many2one(
+    'res.partner',
+    string="Client"
+)
+    
     
     color = fields.Integer(
     string="Couleur",
@@ -245,7 +250,7 @@ class CalendarEvent(models.Model):
  
                 # 1️⃣ Conflit conseiller
                 if rec.conseiller_id and event.conseiller_id:
-                    if set(rec.conseiller_id.ids) & set(event.conseiller_id.ids):
+                    if rec.conseiller_id.id == event.conseiller_id.id:
                         raise ValidationError(
                             "Un conseiller a déjà un RDV sur ce créneau."
                         )

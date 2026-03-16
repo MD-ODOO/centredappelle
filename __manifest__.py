@@ -21,7 +21,7 @@
     ],
      'assets': {
         'web.assets_backend': [
-            'oui_allo_rdv_pro/static/lib/chartjs/chart.umd.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
             'oui_allo_rdv_pro/static/src/css/executive_dashboard.css',
             'oui_allo_rdv_pro/static/src/js/executive_dashboard.js',
             'oui_allo_rdv_pro/static/src/xml/executive_dashboard.xml',
