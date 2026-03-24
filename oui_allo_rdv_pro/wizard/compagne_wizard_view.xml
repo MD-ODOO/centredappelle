@@ -1,0 +1,42 @@
+<odoo>
+<record id="view_campaign_generate_rdv_wizard_form"
+        model="ir.ui.view">
+    <field name="name">campaign.generate.rdv.wizard.form</field>
+    <field name="model">campaign.generate.rdv.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Générer les Rendez-vous">
+            <group>
+                <field name="campaign_id" readonly="1"/>
+                <field name="partner_id" readonly="1"/>
+                <field name="responsable_id" readonly="1" />
+                <field name="conseiller_ids" widget="many2many_tags" domain="[('id','in',available_conseiller_ids)]"/>
+            </group>
+
+            <group string="Dates des RDV">
+                <field name="rdv_line_ids">
+                    <list editable="bottom">
+                        <field name="start_datetime"/>
+                        <field name="conseiller_ids" widget="many2many_tags" domain="[('id', 'in', wizard_id.available_conseiller_ids)]"  />
+                        <field name="duration"/>
+                    </list>
+                </field>
+            </group>
+
+            <footer>
+                <button string="Générer"
+                        type="object"
+                        name="action_generate_rdv"
+                        class="btn-primary"/>
+                <button string="Annuler"
+                        special="cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+   
+
+
+
+
+</odoo>
