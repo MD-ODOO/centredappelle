@@ -1,0 +1,90 @@
+
+<odoo>
+
+   
+ <!-- groups="oui_allo_rdv_pro.group_call_admin,
+                  oui_allo_rdv_pro.group_call_manager,
+                  oui_allo_rdv_pro.group_call_user" -->
+    <menuitem id="menu_root_rdv" name="Gestion RDV" />
+
+    <menuitem id="menu_campaign"
+              name="Campagnes"
+              parent="menu_root_rdv"
+              sequence="10"
+              action="action_campaign"/>
+
+    <menuitem id="menu_rdv_campain"
+              name=" Rendez-Vous"
+              parent="menu_root_rdv"
+              sequence="20"
+              action="action_evens_all"/>
+    
+    <menuitem id="menu_dashboard"
+          name="Dashboard Exécutif"
+          parent="menu_root_rdv"
+          sequence="30"
+          action="action_executive_dashboard"/>
+    
+   
+    <menuitem id="stage_menu"
+          name="Etapes "
+          parent="menu_root_rdv"
+          sequence="40"
+          action="action_rdv_stage"/>
+    
+   
+   
+
+
+   
+    
+   
+    
+   
+
+   
+
+    <record id="stage_pris" model="rdv.stage">
+    <field name="name">Pris</field>
+    <field name="sequence">1</field>
+</record>
+
+<record id="stage_confirme" model="rdv.stage">
+    <field name="name">Confirmé</field>
+    <field name="sequence">2</field>
+</record>
+
+<record id="stage_exploite" model="rdv.stage">
+    <field name="name">Exploité</field>
+    <field name="sequence">3</field>
+        <field name="is_done">True</field>
+
+</record>
+
+<record id="stage_absent" model="rdv.stage">
+    <field name="name">Absent</field>
+    <field name="sequence">4</field>
+</record>
+
+<record id="stage_reported" model="rdv.stage">
+    <field name="name">Reporté</field>
+    <field name="sequence">5</field>
+</record>
+
+
+<record id="stage_canceled" model="rdv.stage">
+    <field name="name">Anullé</field>
+    <field name="sequence">6</field>
+
+</record>
+
+<record id="stage_recycle" model="rdv.stage">
+    <field name="name">À recycler</field>
+    <field name="sequence">7</field>
+    <field name="fold">True</field>
+</record>
+
+ 
+
+
+</odoo>

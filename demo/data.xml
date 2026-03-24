@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+
+        <!-- Cron qui lance l'automatisation RDV toutes les heures -->
+       <record id="ir_cron_rdv_automation" model="ir.cron">
+            <field name="name">RDV Automation</field>
+            <field name="model_id" ref="calendar.model_calendar_event"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_rdv_automation()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="active">True</field>
+        </record>
+
+
+
+        <!-- ========================= -->
+        <!-- ADMIN -->
+        <!-- ========================= -->
+
+        <record id="user_call_admin" model="res.users">
+            <field name="name">Admin Call Center</field>
+            <field name="login">admin.call</field>
+            <field name="email">admin@callcenter.com</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="groups" eval="[
+                (4, ref('base.group_user')),
+                (4, ref('oui_allo_rdv_pro.group_call_admin'))
+            ]"/>
+        </record>
+
+        <!-- ========================= -->
+        <!-- MANAGER 1 -->
+        <!-- ========================= -->
+
+        <record id="user_call_manager_1" model="res.users">
+            <field name="name">Manager Alpha</field>
+            <field name="login">manager.alpha</field>
+            <field name="email">manager.alpha@callcenter.com</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="groups" eval="[
+                (4, ref('base.group_user')),
+                (4, ref('oui_allo_rdv_pro.group_call_manager'))
+            ]"/>
+        </record>
+
+        <!-- ========================= -->
+        <!-- MANAGER 2 -->
+        <!-- ========================= -->
+
+        <record id="user_call_manager_2" model="res.users">
+            <field name="name">Manager Beta</field>
+            <field name="login">manager.beta</field>
+            <field name="email">manager.beta@callcenter.com</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="groups" eval="[
+                (4, ref('base.group_user')),
+                (4, ref('oui_allo_rdv_pro.group_call_manager'))
+            ]"/>
+        </record>
+
+        <!-- ========================= -->
+        <!-- CONSEILLER 1 -->
+        <!-- ========================= -->
+
+        <record id="user_call_user_1" model="res.users">
+            <field name="name">Conseiller 1</field>
+            <field name="login">conseiller.one</field>
+            <field name="email">conseiller1@callcenter.com</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="groups" eval="[
+                (4, ref('base.group_user')),
+                (4, ref('oui_allo_rdv_pro.group_call_user'))
+            ]"/>
+        </record>
+
+        <!-- ========================= -->
+        <!-- CONSEILLER 2 -->
+        <!-- ========================= -->
+
+        <record id="user_call_user_2" model="res.users">
+            <field name="name">Conseiller 2</field>
+            <field name="login">conseiller.two</field>
+            <field name="email">conseiller2@callcenter.com</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="groups" eval="[
+                (4, ref('base.group_user')),
+                (4, ref('oui_allo_rdv_pro.group_call_user'))
+            ]"/>
+        </record>
+
+    </data>
+</odoo>
