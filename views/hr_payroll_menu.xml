@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_hr_payroll_community_root" name="Payroll" sequence="5"
+              web_icon="hr_payroll_community,static/description/icon.png"/>
+
+               <menuitem id="menu_hr_payroll_community_configuration" name="Configuration"
+              parent="menu_hr_payroll_community_root"
+              sequence="100"
+              groups="hr_payroll_community.group_hr_payroll_community_manager"/>
+
+        <menuitem
+                id="menu_hr_payroll_structure_view"
+                action="hr_payroll_structure_action"
+                parent="menu_hr_payroll_community_configuration"
+                sequence="2"
+        />
+
+          <menuitem id="menu_hr_payroll_input_type" name="Type Eléments de Salaire"
+              parent="menu_hr_payroll_community_configuration"
+              sequence="3"
+              action="action_view_hr_payslip_input_type"
+            />
+         <menuitem action="hr_payslip_run_action" id="menu_hr_payslip_run"
+              sequence="1"
+              parent="menu_hr_payroll_community_root"/>
+        
+          <menuitem id="menu_hr_payroll_attachements" name="Eléments de Salaire"
+              parent="menu_hr_payroll_community_root"
+              sequence="4"
+              action="hr_salary_attachment_action"
+            />
+                            <menuitem id="menu_hr_payroll_attachement_variables" 
+                            name="Eléments Variables"
+                    parent="menu_hr_payroll_attachements"
+                    sequence="1"
+                    action="action_salary_attachment_variable"
+                    />
+                            <menuitem id="menu_hr_payroll_attachement_fixe" 
+                            name="Eléments Fixes"
+                    parent="menu_hr_payroll_attachements"
+                    sequence="2"
+                    action="action_salary_attachment_fixed"
+                    />
+
+
+
+         <menuitem id="menu_hr_payroll_global_settings" name="Settings"
+              parent="menu_hr_payroll_community_configuration"
+              sequence="10"
+              action="res_config_settings_action"
+              groups="base.group_system"/>
+
+         <menuitem
+            id="menu_hr_salary_rule_category"
+            action="hr_salary_rule_category_action"
+            parent="menu_hr_payroll_community_configuration"
+            sequence="11"
+            groups="base.group_no_one"
+    />
+
+      <menuitem id="menu_action_hr_salary_rule_form"
+              action="hr_salary_rule_action"
+              parent="menu_hr_payroll_community_configuration"
+              sequence="12"/>
+
+         <menuitem
+                id="menu_action_hr_contribution_register"
+                action="hr_contribution_register_action"
+                parent="menu_hr_payroll_community_configuration"
+                sequence="14"
+        />
+
+        <!--    Menu for hr_payslip-->
+    
+    
+    <menuitem action="hr_payslip_action"
+              id="menu_department_tree"
+              parent="menu_hr_payroll_community_root"
+              groups="hr_payroll_community.group_hr_payroll_community_user"/>
+
+        
+</odoo>
