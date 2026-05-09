@@ -1,33 +1,37 @@
 
 <odoo>
-  <record id="view_calendar_event_search_inherit"
+
+   <record id="view_calendar_event_search_inherit"
         model="ir.ui.view">
-    <field name="name">calendar.event.search.inherit</field>
+    <field name="name">calendar.event.search.secure</field>
     <field name="model">calendar.event</field>
     <field name="inherit_id" ref="calendar.view_calendar_event_search"/>
     <field name="arch" type="xml">
 
         <xpath expr="//search" position="inside">
 
-            <filter name="my_campaigns"
-                    string="Mes Campagnes"
-                    domain="[('campaign_manager_id','=',uid)]"/>
-
+            <!-- 👤 MES RDV -->
             <filter name="my_rdv"
                     string="Mes RDV"
-                    domain="[('conseiller_id','in',uid)]"/>
+                    domain="[('conseiller_id','=',uid)]"
+                    groups="oui_allo_rdv_pro.group_call_user"/>
 
+            <!-- 👨‍💼 MES CAMPAGNES -->
+            <filter name="my_campaigns"
+                    string="Mes Campagnes"
+                    domain="[('campaign_id.campaign_manager_id','=',uid)]"
+                    groups="oui_allo_rdv_pro.group_call_manager"/>
+
+            <!-- ✅ RÉALISÉS -->
             <filter name="done"
                     string="Réalisés"
                     domain="[('stage_id.is_done','=',True)]"/>
-            
 
-
+            <!-- ⏰ RETARD -->
             <filter name="overdue"
                     string="En retard"
                     domain="[('is_overdue','=',True)]"/>
-
-            <!-- <group expand="0" string="Group By">
+             <!-- <group expand="0" string="Group By">
                 <filter string="Campagne"
                         context="{'group_by':'campaign_id'}"/>
 
@@ -39,9 +43,11 @@
             </group> -->
 
         </xpath>
-
     </field>
 </record>
+ 
+
+           
 
 
 <record id="view_calendar_event_form_inherit_campaign"
@@ -98,7 +104,7 @@
         quick_create="true"
         class="o_kanban_small_column"
         default_order="start asc"
-        color="color">
+        color="conseiller_id">
 
     <!-- Champs obligatoires -->
     <field name="name"/>
@@ -206,6 +212,20 @@
             </graph>
         </field>
     </record>
+
+    <record id="view_calendar_event_calendar_inherit"
+        model="ir.ui.view">
+    <field name="name">calendar.event.calendar.secure</field>
+    <field name="model">calendar.event</field>
+    <field name="inherit_id" ref="calendar.view_calendar_event_calendar"/>
+    <field name="arch" type="xml">
+
+        <xpath expr="//calendar" position="attributes">
+            <attribute name="color">conseiller_id</attribute>
+        </xpath>
+
+    </field>
+</record>
 
 
 

@@ -11,13 +11,13 @@
               name="Campagnes"
               parent="menu_root_rdv"
               sequence="10"
-              action="action_campaign"/>
+              action="action_open_campaigns"/>
 
     <menuitem id="menu_rdv_campain"
               name=" Rendez-Vous"
               parent="menu_root_rdv"
               sequence="20"
-              action="action_evens_all"/>
+              action="action_open_pipeline"/>
     
     <menuitem id="menu_dashboard"
           name="Dashboard Exécutif"

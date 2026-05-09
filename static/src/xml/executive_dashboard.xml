@@ -16,29 +16,7 @@
                 </select>
             </div>
 
-            <!-- ============================= -->
-            <!-- KPI GLOBAUX -->
-            <!-- ============================= -->
-            <div class="kpi-row">
-                <div class="kpi-card blue">
-                    <h2 t-esc="state.data.global.total ?? 0"/>
-                    <span>Total RDV</span>
-                </div>
-                <div class="kpi-card green">
-                    <h2 t-esc="state.data.global.exploite ?? 0"/>
-                    <span>Exploités</span>
-                </div>
-                <div class="kpi-card red">
-                    <h2 t-esc="state.data.global.absent ?? 0"/>
-                    <span>No Show</span>
-                </div>
-                <div class="kpi-card purple">
-                    <h2 t-esc="(state.data.global.taux_exploitation ?? 0).toFixed(1)"/>%
-                    <span>Taux exploitation</span>
-                </div>
-            </div>
-
-            <!-- ============================= -->
+             <!-- ============================= -->
             <!-- KPI AUJOURD'HUI -->
             <!-- ============================= -->
             <div class="kpi-row">
@@ -60,7 +38,7 @@
                 </div>
             </div>
 
-            <!-- ============================= -->
+             <!-- ============================= -->
             <!-- TABLE RDV PAR DATE -->
             <!-- ============================= -->
             <div class="section">
@@ -98,6 +76,32 @@
                     </div>
                 </div>
             </div>
+
+
+            <!-- ============================= -->
+            <!-- KPI GLOBAUX -->
+            <!-- ============================= -->
+            <div class="kpi-row">
+                <div class="kpi-card blue">
+                    <h2 t-esc="state.data.global.total ?? 0"/>
+                    <span>Total RDV</span>
+                </div>
+                <div class="kpi-card green">
+                    <h2 t-esc="state.data.global.exploite ?? 0"/>
+                    <span>Exploités</span>
+                </div>
+                <div class="kpi-card red">
+                    <h2 t-esc="state.data.global.absent ?? 0"/>
+                    <span>No Show</span>
+                </div>
+                <div class="kpi-card purple">
+                    <h2 t-esc="(state.data.global.taux_exploitation ?? 0).toFixed(1)"/>%
+                    <span>Taux exploitation</span>
+                </div>
+            </div>
+
+           
+           
 
             <!-- ============================= -->
             <!-- TOP 5 CAMPAGNES ET CONSEILLERS -->

@@ -12,6 +12,14 @@ class Campaign(models.Model):
     _order = 'id desc'
     _inherit = ['mail.thread']  # pour tracking state
 
+    @api.model
+    def _default_user_id(self):
+        return self.env.user
+
+    def _user_domain(self):
+        
+        return [('id', '=', self.env.user.id)]
+
     name = fields.Char(string="Référence", readonly=True, copy=False)
     client_id = fields.Many2one(
         'res.partner',
@@ -463,13 +471,34 @@ class Campaign(models.Model):
     
     def action_view_agenda(self):
         self.ensure_one()
+
+        user = self.env.user
+
+        if user.has_group('oui_allo_rdv_pro.group_call_admin'):
+            domain = [('campaign_id', '=', self.id)]
+
+        elif user.has_group('oui_allo_rdv_pro.group_call_manager'):
+            domain = [
+                ('campaign_id', '=', self.id),
+                ('campaign_id.campaign_manager_id', '=', user.id)
+            ]
+
+        else:
+            domain = [
+                ('campaign_id', '=', self.id),
+                ('conseiller_id', '=', user.id)
+            ]
+
         return {
             'type': 'ir.actions.act_window',
-            'name': 'AGENDA',
+            'name': 'Agenda',
             'res_model': 'calendar.event',
-            'view_mode': 'calendar',
-            'domain': [
-                ('campaign_id', '=', self.id) ],
+            'view_mode': 'calendar,tree,form,kanban',
+            'domain': domain,
+            'context': {
+                'default_campaign_id': self.id,
+                'search_default_today': 1,
+            }
         }
     def action_view_campagne_evens(self):
         self.ensure_one()
@@ -741,6 +770,31 @@ class Campaign(models.Model):
             "bar_performance": bar_performance,
             "monthly_evolution": monthly_evolution,
             "is_admin": is_admin,
+        }
+    
+    def action_open_campaigns(self):
+        user = self.env.user
+
+        domain = []
+
+        if user.has_group('oui_allo_rdv_pro.group_call_admin'):
+            domain = []
+
+        elif user.has_group('oui_allo_rdv_pro.group_call_manager'):
+            domain = [('campaign_manager_id', '=', user.id)]
+
+        else:
+            domain = [('conseiller_ids', 'in', user.id)]
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Campagnes',
+            'res_model': 'oui.campaign',
+            'view_mode': 'list,form',
+            'domain': domain,
+            'context': {
+                'search_default_active': 1,
+            }
         }
 class AccountMove(models.Model):
     _inherit = 'account.move'

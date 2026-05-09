@@ -11,6 +11,7 @@ class CalendarEvent(models.Model):
 
     campaign_id = fields.Many2one('oui.campaign', string="Campagne",index=True)
     conseiller_id = fields.Many2one('res.users', string="Conseiller", required=True)
+    
     campaign_manager_id = fields.Many2one(
         'res.users',
         string="Responsable de campagne"
@@ -285,3 +286,49 @@ class CalendarEvent(models.Model):
             CREATE INDEX IF NOT EXISTS idx_event_conseiller
             ON calendar_event (conseiller_id);
         """)
+    
+    def _check_access_rule(self, operation):
+        if self.env.user.has_group('oui_allo_rdv_pro.group_call_admin'):
+            return super()._check_access_rule(operation)
+
+        for rec in self:
+            # Conseiller
+            if self.env.user.has_group('oui_allo_rdv_pro.group_call_user'):
+                if rec.conseiller_id != self.env.user:
+                    raise UserError("Accès interdit à ce rendez-vous.")
+
+            # Manager
+            if self.env.user.has_group('oui_allo_rdv_pro.group_call_manager'):
+                if rec.campaign_id.campaign_manager_id != self.env.user:
+                    raise UserError("Accès interdit à ce rendez-vous.")
+
+        return super()._check_access_rule(operation)
+    
+    def action_open_pipeline(self):
+        user = self.env.user
+
+        if user.has_group('oui_allo_rdv_pro.group_call_admin'):
+            domain = []
+
+        elif user.has_group('oui_allo_rdv_pro.group_call_manager'):
+            domain = [('campaign_id.campaign_manager_id', '=', user.id)]
+
+        else:
+            domain = [('conseiller_id', '=', user.id)]
+
+        context = {}
+
+        if user.has_group('oui_allo_rdv_pro.group_call_user'):
+            context['search_default_my_rdv'] = 1
+
+        if user.has_group('oui_allo_rdv_pro.group_call_manager'):
+            context['search_default_my_campaigns'] = 1
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Pipeline RDV',
+            'res_model': 'calendar.event',
+            'view_mode': 'kanban,list,form,calendar',
+            'domain': domain,
+            'context': context,
+        }
