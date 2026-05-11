@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ========================================================= -->
+    <!-- ================= MODULE CATEGORY ======================= -->
+    <!-- ========================================================= -->
+
+    <record id="module_category_call_center" model="ir.module.category">
+        <field name="name">Centre d'Appel</field>
+        <field name="sequence">200</field>
+    </record>
+
+
+    <!-- ========================================================= -->
+    <!-- ======================= GROUPS =========================== -->
+    <!-- ========================================================= -->
+
+    <!-- Conseiller -->
+    <record id="group_call_user" model="res.groups">
+        <field name="name">Conseiller</field>
+        <!-- <field name="category_id" ref="module_category_call_center"/> -->
+    </record>
+
+    <!-- Responsable Campagne -->
+    <record id="group_call_manager" model="res.groups">
+        <field name="name">Responsable de Campagne</field>
+        <!-- <field name="category_id" ref="module_category_call_center"/> -->
+        <field name="implied_ids" eval="[(4, ref('oui_allo_rdv_pro.group_call_user'))]"/>
+    </record>
+
+    <!-- Administrateur Module -->
+    <record id="group_call_admin" model="res.groups">
+        <field name="name">Administrateur Centre d'Appel</field>
+        <!-- <field name="category_id" ref="module_category_call_center"/> -->
+        <!-- IMPORTANT : n'implique PAS manager -->
+    </record>
+
+
+    <!-- ========================================================= -->
+    <!-- ====================== RECORD RULES ====================== -->
+    <!-- ========================================================= -->
+
+    <data noupdate="1">
+
+        <!-- ================= CAMPAIGN RULES ================= -->
+
+        <!-- Conseiller : voit campagnes où il est assigné -->
+        <record id="rule_campaign_user_assigned" model="ir.rule">
+            <field name="name">Conseiller - campagnes assignées</field>
+            <field name="model_id" ref="model_oui_campaign"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_user'))]"/>
+            <field name="domain_force">
+                [('conseiller_ids', 'in', [user.id])]
+            </field>
+        </record>
+
+        <!-- Manager : voit ses campagnes -->
+        <record id="rule_campaign_manager_own" model="ir.rule">
+            <field name="name">Manager - ses campagnes</field>
+            <field name="model_id" ref="model_oui_campaign"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_manager'))]"/>
+            <field name="domain_force">
+                [('campaign_manager_id', '=', user.id)]
+            </field>
+        </record>
+
+        <!-- Admin : voit tout -->
+        <record id="rule_campaign_admin_full" model="ir.rule">
+            <field name="name">Admin - toutes campagnes</field>
+            <field name="model_id" ref="model_oui_campaign"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_admin'))]"/>
+            <field name="domain_force">[(1,'=',1)]</field>
+        </record>
+
+
+        <!-- ================= EVENT RULES ================= -->
+
+        <!-- Conseiller : voit ses RDV -->
+        <record id="rule_event_user_own" model="ir.rule">
+            <field name="name">Conseiller - ses RDV</field>
+            <field name="model_id" ref="calendar.model_calendar_event"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_user'))]"/>
+            <field name="domain_force">
+                [('conseiller_id', '=', [user.id]
+                ('campaign_id', '!=', False))]
+            </field>
+        </record>
+
+        <!-- Manager : voit RDV de ses campagnes -->
+        <record id="rule_event_manager_campaign" model="ir.rule">
+            <field name="name">Manager - RDV de ses campagnes</field>
+            <field name="model_id" ref="calendar.model_calendar_event"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_manager'))]"/>
+            <field name="domain_force">
+                [('campaign_id.campaign_manager_id', '=', user.id)]
+            </field>
+        </record>
+
+        <!-- Admin : voit tout -->
+        <record id="rule_event_admin_full" model="ir.rule">
+            <field name="name">Admin - tous RDV</field>
+            <field name="model_id" ref="calendar.model_calendar_event"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_admin'))]"/>
+            <field name="domain_force">[(1,'=',1)]</field>
+        </record>
+
+
+        <!-- ================= STAGE RULES ================= -->
+
+        <record id="rule_stage_admin_full" model="ir.rule">
+            <field name="name">Admin - tous statuts</field>
+            <field name="model_id" ref="model_rdv_stage"/>
+            <field name="groups" eval="[(4, ref('oui_allo_rdv_pro.group_call_admin'))]"/>
+            <field name="domain_force">[(1,'=',1)]</field>
+        </record>
+
+    </data>
+
+</odoo>
